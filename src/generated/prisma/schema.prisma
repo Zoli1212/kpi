@@ -1,0 +1,276 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          Int       @id @default(autoincrement())
+  login       String    @unique
+  name        String
+  description String?
+  email       String?   @unique
+  created     DateTime  @default(now())
+  modified    DateTime  @updatedAt
+  expired     DateTime?
+
+  // Relations
+  userRoles               UserRole[]
+  userRights              UserRight[]
+  logs                    Log[]
+  kpiData                 KPI_Data[]  @relation("KPI_Data_User")
+  approvedKPI             KPI_Data[]  @relation("KPI_Data_Approver")
+  reportedIncidents       Incident[]  @relation("Incident_Reporter")
+  createdIncidents        Incident[]  @relation("Incident_Creator")
+  handledIncidents        Incident[]  @relation("Incident_Handler")
+  analystSystems          System[]    @relation("System_Analyst")
+  appOperatorSystems      System[]    @relation("System_AppOperator")
+  platformOperatorSystems System[]    @relation("System_PlatformOperator")
+  infraOperatorSystems    System[]    @relation("System_InfraOperator")
+}
+
+model Role {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  description String?
+  created     DateTime  @default(now())
+  modified    DateTime  @updatedAt
+  expired     DateTime?
+
+  // Relations
+  userRoles  UserRole[]
+  roleRights RoleRight[]
+}
+
+model Right {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  description String?
+  created     DateTime  @default(now())
+  modified    DateTime  @updatedAt
+  expired     DateTime?
+
+  // Relations
+  roleRights RoleRight[]
+  userRights UserRight[]
+}
+
+model UserRole {
+  id       Int       @id @default(autoincrement())
+  userId   Int
+  roleId   Int
+  created  DateTime  @default(now())
+  modified DateTime  @updatedAt
+  expired  DateTime?
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+  role Role @relation(fields: [roleId], references: [id])
+
+  @@unique([userId, roleId])
+}
+
+model RoleRight {
+  id         Int       @id @default(autoincrement())
+  roleId     Int
+  rightId    Int
+  permission String
+  created    DateTime  @default(now())
+  modified   DateTime  @updatedAt
+  expired    DateTime?
+
+  // Relations
+  role  Role  @relation(fields: [roleId], references: [id])
+  right Right @relation(fields: [rightId], references: [id])
+
+  @@unique([roleId, rightId])
+}
+
+model UserRight {
+  id         Int       @id @default(autoincrement())
+  userId     Int
+  rightId    Int
+  permission String
+  created    DateTime  @default(now())
+  modified   DateTime  @updatedAt
+  expired    DateTime?
+
+  // Relations
+  user  User  @relation(fields: [userId], references: [id])
+  right Right @relation(fields: [rightId], references: [id])
+
+  @@unique([userId, rightId])
+}
+
+model Log {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  relationId Int?
+  valueFrom  String?
+  valueTo    String?
+  created    DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Service {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  description String?
+  created     DateTime  @default(now())
+  modified    DateTime  @updatedAt
+  expired     DateTime?
+
+  // Relations
+  kpiData   KPI_Data[]
+  relations Relation[]
+}
+
+model KPI_Data {
+  id           Int       @id @default(autoincrement())
+  itemId       Int
+  serviceId    Int
+  userId       Int
+  companyId    Int
+  systemId     Int
+  date         DateTime
+  value        Float
+  approved     Boolean   @default(false)
+  approverId   Int?
+  approvalDate DateTime?
+  created      DateTime  @default(now())
+  modified     DateTime  @updatedAt
+  expired      DateTime?
+
+  // Relations
+  item     Item    @relation(fields: [itemId], references: [id])
+  service  Service @relation(fields: [serviceId], references: [id])
+  user     User    @relation("KPI_Data_User", fields: [userId], references: [id])
+  company  Company @relation(fields: [companyId], references: [id])
+  system   System  @relation(fields: [systemId], references: [id])
+  approver User?   @relation("KPI_Data_Approver", fields: [approverId], references: [id])
+}
+
+model Item {
+  id          Int       @id @default(autoincrement())
+  code        String    @unique
+  name        String
+  description String?
+  created     DateTime  @default(now())
+  modified    DateTime  @updatedAt
+  expired     DateTime?
+
+  // Relations
+  kpiData KPI_Data[]
+}
+
+model Company {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  description String?
+  created     DateTime  @default(now())
+  modified    DateTime  @updatedAt
+  expired     DateTime?
+
+  // Relations
+  kpiData   KPI_Data[]
+  systems   System[]
+  incidents Incident[]
+}
+
+model System {
+  id                       Int       @id @default(autoincrement())
+  name                     String    @unique
+  description              String?
+  criticality              String?
+  availability             String?
+  recoverability           String?
+  maintainability          String?
+  integrity                String?
+  confidentiality          String?
+  analystId                Int?
+  applicationOperatorId    Int?
+  platformOperatorId       Int?
+  infrastructureOperatorId Int?
+  companyId                Int
+  created                  DateTime  @default(now())
+  modified                 DateTime  @updatedAt
+  expired                  DateTime?
+
+  // Relations
+  kpiData                KPI_Data[]
+  incidents              Incident[]
+  relations              Relation[]
+  company                Company    @relation(fields: [companyId], references: [id])
+  analyst                User?      @relation("System_Analyst", fields: [analystId], references: [id])
+  applicationOperator    User?      @relation("System_AppOperator", fields: [applicationOperatorId], references: [id])
+  platformOperator       User?      @relation("System_PlatformOperator", fields: [platformOperatorId], references: [id])
+  infrastructureOperator User?      @relation("System_InfraOperator", fields: [infrastructureOperatorId], references: [id])
+}
+
+model Relation {
+  id        Int       @id @default(autoincrement())
+  serviceId Int
+  systemId  Int
+  validFrom DateTime
+  validTo   DateTime?
+  created   DateTime  @default(now())
+  modified  DateTime  @updatedAt
+  expired   DateTime?
+
+  // Relations
+  service Service @relation(fields: [serviceId], references: [id])
+  system  System  @relation(fields: [systemId], references: [id])
+}
+
+model Incident {
+  id             Int       @id @default(autoincrement())
+  ready          Boolean   @default(false)
+  reporterId     Int
+  detectionTime  DateTime
+  notificationId String?
+  beginning      DateTime
+  end            DateTime
+  type           String
+  systemId       Int
+  companyId      Int
+  urgency        String
+  criticality    String
+  description    String
+  creatorId      Int
+  handlerId      Int
+  cause          String?
+  measure        String?
+  notification   String?
+  created        DateTime  @default(now())
+  modified       DateTime  @updatedAt
+  expired        DateTime?
+
+  // Relations
+  reporter User    @relation("Incident_Reporter", fields: [reporterId], references: [id])
+  system   System  @relation(fields: [systemId], references: [id])
+  company  Company @relation(fields: [companyId], references: [id])
+  creator  User    @relation("Incident_Creator", fields: [creatorId], references: [id])
+  handler  User    @relation("Incident_Handler", fields: [handlerId], references: [id])
+}
+
+model Guide {
+  id          Int       @id @default(autoincrement())
+  column      String
+  description String?
+  responsible String?
+  created     DateTime  @default(now())
+  modified    DateTime  @updatedAt
+  expired     DateTime?
+}
