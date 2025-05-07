@@ -84,10 +84,45 @@ export const authOptions: NextAuthConfig = {
       }
       return session;
     },
+    async redirect({ url, baseUrl }) {
+      // Allows relative callback URLs
+      if (url.startsWith('/')) return `${baseUrl}${url}`
+      // Allows callback URLs on the same origin
+      else if (new URL(url).origin === baseUrl) return url
+      return baseUrl
+    },
   },
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
+    updateAge: 0, // Force session to be updated every time
+  },
+  cookies: {
+    sessionToken: {
+      name: `__Secure-next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: true,
+        maxAge: 30 * 24 * 60 * 60, // 30 days
+      },
+    },
+  },
+  events: {
+    async signOut(message: { session?: any; token?: any }) {
+      try {
+        const sessionToken = message.session?.sessionToken || message.token?.sessionToken;
+        if (sessionToken) {
+          // Invalidate the session in the database
+          await (db as any).session.deleteMany({
+            where: { sessionToken }
+          });
+        }
+      } catch (error) {
+        console.error('Error during sign out cleanup:', error);
+      }
+    },
   },
   pages: {
     signIn: "/signin",

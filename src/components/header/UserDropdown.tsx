@@ -1,4 +1,5 @@
 "use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -6,6 +7,7 @@ import React, { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
+import { signOutAction } from '@/lib/auth-actions';
 
 export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
@@ -24,21 +26,36 @@ export default function UserDropdown() {
   async function handleSignOut(e?: React.MouseEvent<HTMLAnchorElement>) {
     e?.preventDefault();
     try {
-      // First, redirect to the sign-in page
-      router.push('/signin');
-      // Then, trigger the sign-out
-      await signOut({
-        redirect: false,
-        callbackUrl: '/signin'
-      });
-      // Force a full page reload to ensure all auth state is cleared
-      window.location.href = '/signin';
+      // Clear all Auth.js related data
+      if (typeof window !== 'undefined') {
+        // Clear localStorage and sessionStorage
+        localStorage.clear();
+        sessionStorage.clear();
+
+        // Clear all cookies
+        document.cookie.split(';').forEach(cookie => {
+          const [name] = cookie.trim().split('=');
+          document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+        });
+      }
+
+      // Call the server action for sign out
+      const result = await signOutAction();
+      
+      // Handle redirect on client side after successful sign out
+      if (result.success) {
+        window.location.href = '/signin';
+      } else {
+        console.error('Sign out failed:', result.message);
+        window.location.href = '/signin';
+      }
     } catch (error) {
       console.error('Error during sign out:', error);
-      // Still redirect to sign-in even if there's an error
+      // If there's an error, force redirect to sign-in
       window.location.href = '/signin';
-    }
+    } 
   }
+
   return (
     <div className="relative">
       <button
