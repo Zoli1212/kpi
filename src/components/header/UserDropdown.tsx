@@ -21,14 +21,22 @@ export default function UserDropdown() {
     setIsOpen(false);
   }
 
-  async function handleSignOut(e?: React.MouseEvent) {
+  async function handleSignOut(e?: React.MouseEvent<HTMLAnchorElement>) {
     e?.preventDefault();
     try {
-      await signOut({ redirect: false });
+      // First, redirect to the sign-in page
       router.push('/signin');
-      router.refresh();
+      // Then, trigger the sign-out
+      await signOut({
+        redirect: false,
+        callbackUrl: '/signin'
+      });
+      // Force a full page reload to ensure all auth state is cleared
+      window.location.href = '/signin';
     } catch (error) {
       console.error('Error during sign out:', error);
+      // Still redirect to sign-in even if there's an error
+      window.location.href = '/signin';
     }
   }
   return (
