@@ -87,8 +87,19 @@ export default function AuthLayout({
             <div className="relative items-center justify-center flex z-1">
               <GridShape />
               <div className="flex flex-col items-center max-w-xs">
-  
-                <p className="text-center text-gray-400 dark:text-white/60">
+                <h1 
+                  className="text-4xl font-bold mb-4 text-transparent bg-clip-text"
+                  style={{
+                    backgroundImage: 'linear-gradient(90deg, #00b4d8, #0077b6, #00b4d8)',
+                    WebkitBackgroundClip: 'text',
+                    textShadow: '0 0 10px rgba(0, 180, 216, 0.5)',
+                    position: 'relative',
+                    zIndex: 1
+                  }}
+                >
+                  OPUSENERGETIKA
+                </h1>
+                <p className="text-center text-gray-400 dark:text-white/60 mt-2">
                   KPI User and Admin Dashboard
                 </p>
               </div>

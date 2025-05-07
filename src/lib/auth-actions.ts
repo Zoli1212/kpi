@@ -1,8 +1,9 @@
 "use server";
-import { signIn } from "next-auth/react";
 import { AuthError } from "next-auth";
 import bcrypt from 'bcryptjs';
 import { db } from './db';
+import { signIn } from '@/auth';
+import { AuthError as NextAuthError } from 'next-auth';
 
 type FormState = {
   message: string;
@@ -13,29 +14,22 @@ export async function authenticate(
   formData: FormData,
 ): Promise<FormState> {
   try {
-    await signIn("credentials", {
-      email: formData.get("email") as string,
-      password: formData.get("password") as string,
-      redirectTo: "/dashboard",
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+
+    await signIn('credentials', {
+      email,
+      password,
+      redirect: false
     });
-    return { message: 'Sikeres bejelentkezés' };
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      if ('type' in error && error.type === 'CredentialsSignin') {
-        return { message: 'Hibás email vagy jelszó.' };
-      } else if (error.cause && 
-                typeof error.cause === 'object' && 
-                error.cause !== null && 
-                'err' in error.cause && 
-                error.cause.err && 
-                typeof error.cause.err === 'object' && 
-                'message' in error.cause.err && 
-                error.cause.err.message === 'CredentialsSignin') {
-        return { message: 'Hibás email vagy jelszó.' };
-      }
-      return { message: error.message || 'Valami hiba történt a bejelentkezés során.' };
+
+    return { message: 'success' };
+  } catch (error) {
+    console.error('Authentication error:', error);
+    if (error instanceof NextAuthError) {
+      return { message: 'Hibás email vagy jelszó.' };
     }
-    return { message: 'Ismeretlen hiba történt a bejelentkezés során.' };
+    return { message: 'Valami hiba történt a bejelentkezés során.' };
   }
 }
 

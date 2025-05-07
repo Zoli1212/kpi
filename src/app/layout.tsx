@@ -4,7 +4,7 @@ import './globals.css';
 import { SidebarProvider } from '@/context/SidebarContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { AuthProvider } from '@/providers/AuthProvider';
-import { auth } from './api/auth/[...nextauth]/route';
+import { auth } from "@/auth";
 
 const outfit = Outfit({
   subsets: ["latin"],

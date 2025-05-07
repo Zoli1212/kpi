@@ -24,6 +24,7 @@ export default function SignInForm() {
   useEffect(() => {
     if (state?.message === 'success') {
       router.push('/dashboard');
+      router.refresh();
     } else if (state?.message) {
       toast.error(state.message);
     }
@@ -103,8 +104,7 @@ export default function SignInForm() {
                 </span>
               </div>
             </div>
-            <form action={formAction}>
-              <input type="hidden" name="_action" value="signin" />
+            <form action={formAction} method="POST">
               <div className="space-y-6">
                 <div>
                   <Label>

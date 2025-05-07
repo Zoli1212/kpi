@@ -1,29 +1,33 @@
 import NextAuth from "next-auth";
-import type { DefaultSession, NextAuthConfig} from "next-auth";
+import type { DefaultSession, NextAuthConfig } from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-
+import { JWT } from "next-auth/jwt";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import db from "@/lib/db";
 
+// Extend the built-in session types
 declare module "next-auth" {
   interface Session extends DefaultSession {
     user: {
       id: string;
       role: string;
-    } & DefaultSession["user"];
+    } & DefaultSession["user"]
   }
 
   interface User {
-    id: string;
     role: string;
   }
 }
 
-
+declare module "next-auth/jwt" {
+  interface JWT {
+    role?: string;
+  }
+}
 
 export const authOptions: NextAuthConfig = {
-  adapter: PrismaAdapter(db) as any,
+  adapter: PrismaAdapter(db),
   providers: [
     CredentialsProvider({
       name: "credentials",
@@ -52,7 +56,14 @@ export const authOptions: NextAuthConfig = {
         if (!isCorrectPassword) {
           throw new Error("Invalid credentials");
         }
-        return user;
+
+
+        return {
+          id: user.id.toString(),
+          email: user.email,
+          name: user.name || '',
+          role: 'user',
+        } as any; // Type assertion to handle the role property
       },
     }),
   ],
@@ -60,7 +71,8 @@ export const authOptions: NextAuthConfig = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.role = user.role;
+        token.role = (user as any).role || 'user';
+        token.email = user.email;
       }
       return token;
     },
@@ -68,37 +80,24 @@ export const authOptions: NextAuthConfig = {
       if (session?.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
+        session.user.email = token.email as string;
       }
       return session;
     },
   },
-  secret: process.env.NEXTAUTH_SECRET,
   session: {
-    strategy: "jwt" as const,
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   pages: {
-    signIn: "/",
+    signIn: "/signin",
+    signOut: "/signin",
+    error: "/error",
   },
+  secret: process.env.NEXTAUTH_SECRET,
   debug: process.env.NODE_ENV === "development",
 };
 
 const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };
-export const auth = handler.auth;
-
-export default authOptions;
-
-declare module "next-auth" {
-  interface Session extends DefaultSession {
-    user: {
-      id: string;
-      role: string;
-    } & DefaultSession["user"];
-  }
-
-  interface User {
-    id: string;
-    role: string;
-  }
-}
