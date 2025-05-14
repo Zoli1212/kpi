@@ -1,21 +1,29 @@
 'use client'
 import React from 'react';
-import { useTable, HeaderGroup } from 'react-table';
+import { useTable, HeaderGroup, Column } from 'react-table';
 
 interface KPITableProps {
-  data: { date: string; metric: string; value: number }[];
+  data: { date: string; itemName: string; serviceName: string; systemName: string; value: number }[];
 }
 
 const KPITable: React.FC<KPITableProps> = ({ data }) => {
-  const columns = React.useMemo(
+  const columns = React.useMemo<Column<{ date: string; itemName: string; serviceName: string; systemName: string; value: number }>[]>(
     () => [
       {
         Header: 'Date',
         accessor: 'date',
       },
       {
-        Header: 'Metric',
-        accessor: 'metric',
+        Header: 'Item Name',
+        accessor: 'itemName',
+      },
+      {
+        Header: 'Service Name',
+        accessor: 'serviceName',
+      },
+      {
+        Header: 'System Name',
+        accessor: 'systemName',
       },
       {
         Header: 'Value',
@@ -37,7 +45,7 @@ const KPITable: React.FC<KPITableProps> = ({ data }) => {
     <div className="kpi-table">
       <table {...getTableProps()} className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
-          {headerGroups.map((headerGroup: HeaderGroup) => (
+          {headerGroups.map((headerGroup: HeaderGroup<{ date: string; itemName: string; serviceName: string; systemName: string; value: number }>) => (
             <tr {...headerGroup.getHeaderGroupProps()}>
               {headerGroup.headers.map(column => (
                 <th

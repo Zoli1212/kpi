@@ -17,8 +17,10 @@ const KPIDataPage = async () => {
 
   // Transform kpiData to the required structure
   const transformedData = kpiData.map(item => ({
-    date: item.date.toISOString(), // Convert Date to string
-    metric: "your_metric_value", // Assign a value to metric
+    date: item.date.toISOString(),
+    itemName: rawItems.find(i => i.id === item.itemId)?.name || 'Unknown Item',
+    serviceName: rawServices.find(s => s.id === item.serviceId)?.name || 'Unknown Service',
+    systemName: rawSystems.find(sys => sys.id === item.systemId)?.name || 'Unknown System',
     value: item.value
   }));
 
