@@ -23,19 +23,24 @@ const KPIForm: React.FC<KPIFormProps> = ({ services, items, systems }) => {
       <Controller
         name="service"
         control={control}
-        render={({ field }) => <FilterComponent name="Service" options={services} {...field} />}
+        render={({ field }) => <FilterComponent options={services} {...field} />}
       />
       <Controller
         name="item"
         control={control}
-        render={({ field }) => <FilterComponent name="Item" options={items} {...field} />}
+        render={({ field }) => <FilterComponent options={items} {...field} />}
       />
       <Controller
         name="system"
         control={control}
-        render={({ field }) => <FilterComponent name="System" options={systems} {...field} />}
+        render={({ field }) => <FilterComponent options={systems} {...field} />}
       />
-      <DatePickerComponent />
+      <div className="flex items-center border border-gray-200 p-4 rounded w-1/4">
+  <svg className="w-4 h-4 ml-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10m-6 4h.01M4 21h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v12a2 2 0 002 2z" />
+  </svg>
+  <DatePickerComponent />
+</div>
     </form>
   );
 };

@@ -2,7 +2,7 @@ import React from 'react';
 
 import KPITable from '@/components/KPITable';
 import prisma from '@/lib/prisma';
-import KPIForm from '../kpi-data/KPIForm';
+import KPIForm from '../../../components/kpi-data/KPIForm';
 
 const KPIDataPage = async () => {
   const [kpiData, descriptions, rawSystems, rawServices, rawItems] = await Promise.all([
