@@ -4,6 +4,7 @@ import { useSidebar } from "@/context/SidebarContext";
 import AppHeader from "@/layout/AppHeader";
 import AppSidebar from "@/layout/AppSidebar";
 import Backdrop from "@/layout/Backdrop";
+import UserSidebar from "@/layout/UserSidebar";
 import React from "react";
 
 export default function UserLayout({
@@ -23,7 +24,7 @@ export default function UserLayout({
   return (
     <div className="min-h-screen xl:flex">
       {/* Sidebar and Backdrop */}
-      <AppSidebar />
+      <UserSidebar />
       <Backdrop />
       {/* Main Content Area */}
       <div

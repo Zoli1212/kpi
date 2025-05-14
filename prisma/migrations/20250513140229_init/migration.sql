@@ -1,29 +1,16 @@
 -- CreateTable
 CREATE TABLE `User` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `login` VARCHAR(191) NOT NULL,
     `name` VARCHAR(191) NOT NULL,
     `description` VARCHAR(191) NULL,
-    `email` VARCHAR(191) NULL,
+    `email` VARCHAR(191) NOT NULL,
+    `hashedPassword` VARCHAR(191) NOT NULL,
     `created` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `modified` DATETIME(3) NOT NULL,
     `expired` DATETIME(3) NULL,
+    `role` ENUM('REPORTER', 'APPROVER', 'VIEWER', 'ADMIN') NOT NULL DEFAULT 'VIEWER',
 
-    UNIQUE INDEX `User_login_key`(`login`),
     UNIQUE INDEX `User_email_key`(`email`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `Role` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `name` VARCHAR(191) NOT NULL,
-    `description` VARCHAR(191) NULL,
-    `created` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `modified` DATETIME(3) NOT NULL,
-    `expired` DATETIME(3) NULL,
-
-    UNIQUE INDEX `Role_name_key`(`name`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -41,29 +28,15 @@ CREATE TABLE `Right` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `UserRole` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `userId` INTEGER NOT NULL,
-    `roleId` INTEGER NOT NULL,
-    `created` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `modified` DATETIME(3) NOT NULL,
-    `expired` DATETIME(3) NULL,
-
-    UNIQUE INDEX `UserRole_userId_roleId_key`(`userId`, `roleId`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
 CREATE TABLE `RoleRight` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `roleId` INTEGER NOT NULL,
     `rightId` INTEGER NOT NULL,
     `permission` VARCHAR(191) NOT NULL,
     `created` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `modified` DATETIME(3) NOT NULL,
     `expired` DATETIME(3) NULL,
 
-    UNIQUE INDEX `RoleRight_roleId_rightId_key`(`roleId`, `rightId`),
+    UNIQUE INDEX `RoleRight_rightId_key`(`rightId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -113,7 +86,7 @@ CREATE TABLE `KPI_Data` (
     `serviceId` INTEGER NOT NULL,
     `userId` INTEGER NOT NULL,
     `companyId` INTEGER NOT NULL,
-    `systemId` INTEGER NOT NULL,
+    `systemId` INTEGER NULL,
     `date` DATETIME(3) NOT NULL,
     `value` DOUBLE NOT NULL,
     `approved` BOOLEAN NOT NULL DEFAULT false,
@@ -135,6 +108,7 @@ CREATE TABLE `Item` (
     `created` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `modified` DATETIME(3) NOT NULL,
     `expired` DATETIME(3) NULL,
+    `serviceId` INTEGER NOT NULL,
 
     UNIQUE INDEX `Item_code_key`(`code`),
     PRIMARY KEY (`id`)
@@ -231,14 +205,19 @@ CREATE TABLE `Guide` (
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- AddForeignKey
-ALTER TABLE `UserRole` ADD CONSTRAINT `UserRole_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+-- CreateTable
+CREATE TABLE `Description` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `text` VARCHAR(191) NOT NULL,
+    `itemId` INTEGER NOT NULL,
+    `guideId` INTEGER NULL,
+    `created` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `modified` DATETIME(3) NOT NULL,
+    `expired` DATETIME(3) NULL,
 
--- AddForeignKey
-ALTER TABLE `UserRole` ADD CONSTRAINT `UserRole_roleId_fkey` FOREIGN KEY (`roleId`) REFERENCES `Role`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `RoleRight` ADD CONSTRAINT `RoleRight_roleId_fkey` FOREIGN KEY (`roleId`) REFERENCES `Role`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+    UNIQUE INDEX `Description_itemId_key`(`itemId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- AddForeignKey
 ALTER TABLE `RoleRight` ADD CONSTRAINT `RoleRight_rightId_fkey` FOREIGN KEY (`rightId`) REFERENCES `Right`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -265,10 +244,13 @@ ALTER TABLE `KPI_Data` ADD CONSTRAINT `KPI_Data_userId_fkey` FOREIGN KEY (`userI
 ALTER TABLE `KPI_Data` ADD CONSTRAINT `KPI_Data_companyId_fkey` FOREIGN KEY (`companyId`) REFERENCES `Company`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `KPI_Data` ADD CONSTRAINT `KPI_Data_systemId_fkey` FOREIGN KEY (`systemId`) REFERENCES `System`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `KPI_Data` ADD CONSTRAINT `KPI_Data_systemId_fkey` FOREIGN KEY (`systemId`) REFERENCES `System`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `KPI_Data` ADD CONSTRAINT `KPI_Data_approverId_fkey` FOREIGN KEY (`approverId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Item` ADD CONSTRAINT `Item_serviceId_fkey` FOREIGN KEY (`serviceId`) REFERENCES `Service`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `System` ADD CONSTRAINT `System_companyId_fkey` FOREIGN KEY (`companyId`) REFERENCES `Company`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -305,3 +287,9 @@ ALTER TABLE `Incident` ADD CONSTRAINT `Incident_creatorId_fkey` FOREIGN KEY (`cr
 
 -- AddForeignKey
 ALTER TABLE `Incident` ADD CONSTRAINT `Incident_handlerId_fkey` FOREIGN KEY (`handlerId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Description` ADD CONSTRAINT `Description_itemId_fkey` FOREIGN KEY (`itemId`) REFERENCES `Item`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Description` ADD CONSTRAINT `Description_guideId_fkey` FOREIGN KEY (`guideId`) REFERENCES `Guide`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;

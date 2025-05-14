@@ -1,0 +1,3 @@
+node prisma/seedEverythingNoDuplicateVars.js
+seedEverythingNoDuplicateVars.js
+
