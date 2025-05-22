@@ -16,13 +16,18 @@ const KPIDataPage = async () => {
   console.log(kpiData)
 
   // Transform kpiData to the required structure
-  const transformedData = kpiData.map(item => ({
-    date: item.date.toISOString(),
-    itemName: rawItems.find(i => i.id === item.itemId)?.name || 'Unknown Item',
-    serviceName: rawServices.find(s => s.id === item.serviceId)?.name || 'Unknown Service',
-    systemName: rawSystems.find(sys => sys.id === item.systemId)?.name || 'Unknown System',
-    value: item.value
-  }));
+  const transformedData = kpiData.map(item => {
+    const date = new Date(item.date);
+    const formattedDate = `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
+    
+    return {
+      date: formattedDate,
+      itemName: rawItems.find(i => i.id === item.itemId)?.name || 'Unknown Item',
+      serviceName: rawServices.find(s => s.id === item.serviceId)?.name || 'Unknown Service',
+      systemName: rawSystems.find(sys => sys.id === item.systemId)?.name || 'Unknown System',
+      value: item.value
+    };
+  });
 
   return (
     <div className="p-4">

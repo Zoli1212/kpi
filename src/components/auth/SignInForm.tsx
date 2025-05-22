@@ -83,15 +83,16 @@ export default function SignInForm() {
               <button className="inline-flex items-center justify-center gap-3 py-3 text-sm font-normal text-gray-700 transition-colors bg-gray-100 rounded-lg px-7 hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:text-white/90 dark:hover:bg-white/10">
                 <svg
                   width="21"
-                  className="fill-current"
                   height="20"
-                  viewBox="0 0 21 20"
+                  viewBox="0 0 24 24"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
+                  className="fill-current"
                 >
-                  <path d="M15.6705 1.875H18.4272L12.4047 8.75833L19.4897 18.125H13.9422L9.59717 12.4442L4.62554 18.125H1.86721L8.30887 10.7625L1.51221 1.875H7.20054L11.128 7.0675L15.6705 1.875ZM14.703 16.475H16.2305L6.37054 3.43833H4.73137L14.703 16.475Z" />
+                  <path d="M12 16.5C14.4853 16.5 16.5 14.4853 16.5 12C16.5 9.51472 14.4853 7.5 12 7.5C9.51472 7.5 7.5 9.51472 7.5 12C7.5 14.4853 9.51472 16.5 12 16.5Z" />
+                  <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 11.71 4.02 11.42 4.05 11.14L8 15.09C7.7 15.67 7.5 16.31 7.5 17C7.5 18.93 9.07 20.5 11 20.5C11.69 20.5 12.33 20.3 12.91 20L15.86 22.95C14.58 23.98 13.32 24 12 24C5.37 24 0 18.63 0 12C0 5.37 5.37 0 12 0C18.63 0 24 5.37 24 12C24 13.32 23.98 14.58 23.95 15.86L20 12.91C20.3 12.33 20.5 11.69 20.5 11C20.5 9.07 18.93 7.5 17 7.5C16.31 7.5 15.67 7.7 15.09 8L12.14 5.05C13.42 4.02 14.68 4 16 4C20.41 4 24 7.59 24 12C24 16.41 20.41 20 16 20H12Z" />
                 </svg>
-                Sign in with X
+                Sign in with LDAP
               </button>
             </div>
             <div className="relative py-3 sm:py-5">
