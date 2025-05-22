@@ -19,28 +19,56 @@ const KPIForm: React.FC<KPIFormProps> = ({ services, items, systems }) => {
   };
 
   return (
-    <form className="space-y-4 mb-6" onSubmit={handleSubmit(onSubmit)}>
-      <Controller
-        name="service"
-        control={control}
-        render={({ field }) => <FilterComponent options={services} {...field} />}
-      />
-      <Controller
-        name="item"
-        control={control}
-        render={({ field }) => <FilterComponent options={items} {...field} />}
-      />
-      <Controller
-        name="system"
-        control={control}
-        render={({ field }) => <FilterComponent options={systems} {...field} />}
-      />
-      <div className="flex items-center border border-gray-200 p-4 rounded w-1/4">
-  <svg className="w-4 h-4 ml-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10m-6 4h.01M4 21h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v12a2 2 0 002 2z" />
-  </svg>
-  <DatePickerComponent />
-</div>
+    <form className="mb-6" onSubmit={handleSubmit(onSubmit)}>
+      <div className="flex flex-wrap items-center gap-8">
+        <div className="w-64">
+          <Controller
+            name="service"
+            control={control}
+            render={({ field }) => (
+              <FilterComponent 
+                options={services} 
+                className="text-sm py-1"
+                {...field} 
+              />
+            )}
+          />
+        </div>
+        <div className="w-48">
+          <Controller
+            name="item"
+            control={control}
+            render={({ field }) => (
+              <FilterComponent 
+                options={items} 
+                className="text-sm py-1"
+                {...field} 
+              />
+            )}
+          />
+        </div>
+        <div className="w-48">
+          <Controller
+            name="system"
+            control={control}
+            render={({ field }) => (
+              <FilterComponent 
+                options={systems} 
+                className="text-sm py-1"
+                {...field} 
+              />
+            )}
+          />
+        </div>
+        <div className="flex items-center">
+          <svg className="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10m-6 4h.01M4 21h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <div className="w-56">
+            <DatePickerComponent />
+          </div>
+        </div>
+      </div>
     </form>
   );
 };

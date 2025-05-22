@@ -20,12 +20,17 @@ const KPIDataPage = async () => {
     const date = new Date(item.date);
     const formattedDate = `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
     
+    // For demo purposes, nextValue is initially the same as value
+    // In a real app, this would come from your database or be calculated
+    const nextValue = item.value;
+    
     return {
       date: formattedDate,
       itemName: rawItems.find(i => i.id === item.itemId)?.name || 'Unknown Item',
       serviceName: rawServices.find(s => s.id === item.serviceId)?.name || 'Unknown Service',
       systemName: rawSystems.find(sys => sys.id === item.systemId)?.name || 'Unknown System',
-      value: item.value
+      value: item.value,
+      nextValue: nextValue
     };
   });
 
@@ -33,7 +38,13 @@ const KPIDataPage = async () => {
     <div className="p-4">
     <h1 className="text-3xl font-bold mb-4">KPI Data Management</h1>
     <KPIForm services={rawServices.map(service => service.name)} items={rawItems.map(item => item.name)} systems={rawSystems.map(system => system.name)} />
-    <button type="submit" className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-md">Add Data</button>
+    <button 
+      type="submit" 
+      className="mt-2 px-6 py-2.5 bg-blue-500 text-white rounded-md 
+                hover:bg-blue-600 transition-colors duration-200 w-32"
+    >
+      Add Data
+    </button>
     <KPITable data={transformedData} />
   </div>
   );

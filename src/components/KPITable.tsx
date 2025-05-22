@@ -1,34 +1,53 @@
 'use client'
 import React from 'react';
-import { useTable, HeaderGroup, Column, Cell, Row } from 'react-table';
+import { 
+  useTable, 
+  HeaderGroup, 
+  Column, 
+  useRowSelect, 
+  TableInstance, 
+  UseTableOptions, 
+  Row,
+  Cell
+} from 'react-table';
 
-interface TableData {
+// Define the exact shape of our row data
+type KPIRowData = {
   itemName: string;
   serviceName: string;
   systemName: string;
   value: number;
   nextValue: number;
-}
+  date?: string;
+};
+
+// Define the table data type
+type TableData = KPIRowData & {
+  [key: string]: any; // Allow additional properties
+};
 
 interface KPITableProps {
-  data: { date: string; itemName: string; serviceName: string; systemName: string; value: number }[];
+  data: TableData[];
 }
 
 const KPITable: React.FC<KPITableProps> = ({ data }) => {
   // Get the latest date from the data
   const latestDate = React.useMemo(() => {
     if (!data || data.length === 0) return '';
-    const dates = data.map(item => item.date).filter(Boolean);
+    const dates = data.map(item => item.date).filter(Boolean) as string[];
     if (dates.length === 0) return '';
     return dates.sort().pop() || '';
   }, [data]);
 
   // Transform data to include next month's values
-  const tableData = React.useMemo(() => {
-    return data.map(({ date, value, ...rest }) => ({
-      ...rest,
+  const tableData = React.useMemo<KPIRowData[]>(() => {
+    return data.map(({ date, value, itemName, serviceName, systemName, nextValue }) => ({
+      itemName,
+      serviceName,
+      systemName,
       value,
-      nextValue: value // For now, using the same value. In a real app, this would be fetched or calculated
+      nextValue: nextValue ?? value, // Use provided nextValue or fallback to value
+      date
     }));
   }, [data]);
 
@@ -43,31 +62,88 @@ const KPITable: React.FC<KPITableProps> = ({ data }) => {
     return `${nextDate.getFullYear()}.${String(nextDate.getMonth() + 1).padStart(2, '0')}.01`;
   }, [latestDate]);
 
-  const columns = React.useMemo<Column<TableData>[]>(
-    () => [
+  // State to track editable values
+  const [editableValues, setEditableValues] = React.useState<Record<number, number>>({});
+
+  // Update editable value when data changes
+  React.useEffect(() => {
+    const initialValues = data.reduce<Record<number, number>>((acc, item, index) => ({
+      ...acc,
+      [index]: item.nextValue ?? item.value // Use nextValue or fallback to value
+    }), {});
+    
+    setEditableValues(prev => ({
+      ...initialValues,
+      ...prev // Keep any existing edits
+    }));
+  }, [data]);
+
+  // Handle value change
+  const handleValueChange = (index: number, value: string) => {
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue)) {
+      setEditableValues(prev => ({
+        ...prev,
+        [index]: numValue
+      }));
+    }
+  };
+
+  // Define columns with proper typing
+  const columns = React.useMemo((): Column<KPIRowData>[] => {
+    return [
       {
         Header: 'Item Name',
         accessor: 'itemName',
+        id: 'itemName',
       },
       {
         Header: 'Service Name',
         accessor: 'serviceName',
+        id: 'serviceName',
       },
       {
         Header: 'System Name',
         accessor: 'systemName',
+        id: 'systemName',
       },
       {
         Header: `Value (${latestDate || 'Date'})`,
-        accessor: 'value',
+        accessor: 'value' as const,
+        id: 'value',
       },
       {
         Header: `Next Value (${nextMonthDate || 'Next Month'})`,
-        accessor: 'nextValue',
+        id: 'nextValue',
+        accessor: 'nextValue' as const,
+        Cell: ({ row }: { row: { index: number; original: KPIRowData } }) => {
+          const value = editableValues[row.index] ?? row.original.nextValue;
+          return (
+            <input
+              type="number"
+              className="w-20 p-1 border rounded"
+              value={value}
+              onChange={(e) => handleValueChange(row.index, e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              step="0.01"
+              min="0"
+            />
+          );
+        },
       },
-    ],
-    [latestDate]
-  );
+    ];
+  }, [latestDate, nextMonthDate, editableValues]);
+
+  const tableInstance = useTable<KPIRowData>(
+    {
+      columns,
+      data: tableData,
+      defaultColumn: {
+        Cell: ({ value }: { value: unknown }) => value !== undefined ? String(value) : '-',
+      },
+    },
+    useRowSelect,
+  ) as TableInstance<KPIRowData>;
 
   const {
     getTableProps,
@@ -75,7 +151,7 @@ const KPITable: React.FC<KPITableProps> = ({ data }) => {
     headerGroups,
     rows,
     prepareRow,
-  } = useTable({ columns, data: tableData });
+  } = tableInstance as TableInstance<TableData>;
 
   return (
     <div className="kpi-table">
