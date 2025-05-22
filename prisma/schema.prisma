@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
   provider = "prisma-client-js"
@@ -36,6 +31,9 @@ model User {
   appOperatorSystems    System[]    @relation("System_AppOperator")
   platformOperatorSystems System[]   @relation("System_PlatformOperator")
   infraOperatorSystems  System[]    @relation("System_InfraOperator")
+  
+  userServices          UserService[] @relation("UserServices")
+  items                 Item[]        @relation("UserToItems")
 }
 
 enum Role {
@@ -108,16 +106,17 @@ model Service {
   modified    DateTime    @updatedAt
   expired     DateTime?
 
-  // Relations
   kpiData     KPI_Data[]
   relations   Relation[]
-  items       Item[]      @relation("ServiceToItems") // 🔄 ugyanaz a név, mint a másik oldalon
+  items       Item[]      @relation("ServiceToItems")
+  systems     System[]
+  userServices UserService[] @relation("UserServices")
 }
 
 model KPI_Data {
   id           Int       @id @default(autoincrement())
   itemId       Int
-  serviceId    Int
+  serviceId    Int?
   userId       Int
   companyId    Int
   systemId     Int?
@@ -132,7 +131,7 @@ model KPI_Data {
   
   // Relations
   item         Item      @relation(fields: [itemId], references: [id])
-  service      Service   @relation(fields: [serviceId], references: [id])
+  service      Service?   @relation(fields: [serviceId], references: [id])
   user         User      @relation("KPI_Data_User", fields: [userId], references: [id])
   company      Company   @relation(fields: [companyId], references: [id])
   system       System?    @relation(fields: [systemId], references: [id])
@@ -147,10 +146,11 @@ model Item {
   created     DateTime    @default(now())
   modified    DateTime    @updatedAt
   expired     DateTime?
-
-  service     Service     @relation("ServiceToItems", fields: [serviceId], references: [id]) // 🔄 ugyanez a név
+  
+  // Relations
+  service     Service     @relation("ServiceToItems", fields: [serviceId], references: [id])
   serviceId   Int
-
+  users       User[]      @relation("UserToItems")
   kpiData     KPI_Data[]
   descriptions Description[] 
 }
@@ -169,6 +169,21 @@ model Company {
   incidents   Incident[]
 }
 
+model UserService {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  serviceId  Int
+  created    DateTime @default(now())
+  modified   DateTime @updatedAt @default(now())
+  expired    DateTime?
+  
+  // Relations
+  user       User     @relation("UserServices", fields: [userId], references: [id], onDelete: Cascade)
+  service    Service  @relation("UserServices", fields: [serviceId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, serviceId])
+}
+
 model System {
   id                     Int         @id @default(autoincrement())
   name                   String      @unique
@@ -184,6 +199,7 @@ model System {
   platformOperatorId     Int?
   infrastructureOperatorId Int?
   companyId              Int
+  serviceId              Int?
   created                DateTime    @default(now())
   modified               DateTime    @updatedAt
   expired                DateTime?
@@ -197,6 +213,7 @@ model System {
   applicationOperator   User?       @relation("System_AppOperator", fields: [applicationOperatorId], references: [id])
   platformOperator      User?       @relation("System_PlatformOperator", fields: [platformOperatorId], references: [id])
   infrastructureOperator User?      @relation("System_InfraOperator", fields: [infrastructureOperatorId], references: [id])
+  service               Service?    @relation(fields: [serviceId], references: [id])
 }
 
 model Relation {

@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `userservice` MODIFY `modified` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3);
