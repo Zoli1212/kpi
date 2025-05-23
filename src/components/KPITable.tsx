@@ -28,6 +28,9 @@ type TableData = KPIRowData & {
 
 interface KPITableProps {
   data: TableData[];
+  systems: Array<{ id: number; name: string; description: string }>;
+  services: Array<{ id: number; name: string; description: string }>;
+  items: Array<{ id: number; name: string; description: string }>;
 }
 
 const KPITable: React.FC<KPITableProps> = ({ data }) => {

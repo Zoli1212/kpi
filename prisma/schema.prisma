@@ -33,7 +33,8 @@ model User {
   infraOperatorSystems  System[]    @relation("System_InfraOperator")
   
   userServices          UserService[] @relation("UserServices")
-  items                 Item[]        @relation("UserToItems")
+  userItems             UserItem[]
+  items                Item[]        @relation("UserToItems")
 }
 
 enum Role {
@@ -151,6 +152,7 @@ model Item {
   service     Service     @relation("ServiceToItems", fields: [serviceId], references: [id])
   serviceId   Int
   users       User[]      @relation("UserToItems")
+  userItems   UserItem[]
   kpiData     KPI_Data[]
   descriptions Description[] 
 }
@@ -272,6 +274,20 @@ model Guide {
   expired     DateTime?
   descriptions Description[]
 }
+
+model UserItem {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  itemId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  item      Item     @relation(fields: [itemId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, itemId])
+  @@map("user_items")
+}
+
 model Description {
   id          Int       @id @default(autoincrement())
   text        String
@@ -283,3 +299,5 @@ model Description {
   modified    DateTime  @updatedAt
   expired     DateTime?
 }
+
+// User model is already defined at the top of the file

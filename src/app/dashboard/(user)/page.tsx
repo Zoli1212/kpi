@@ -1,52 +1,155 @@
 import React from 'react';
-
+import { auth } from '@/auth';
 import KPITable from '@/components/KPITable';
 import prisma from '@/lib/prisma';
-import KPIForm from '../../../components/kpi-data/KPIForm';
+import { Role } from '@prisma/client';
+
+type UserItem = {
+  itemId: number;
+};
+
+interface KpiData {
+  id: number;
+  itemId: number;
+  item?: {
+    id: number;
+    name: string;
+  };
+  service?: {
+    id: number;
+    name: string;
+  };
+  system?: {
+    id: number;
+    name: string;
+  };
+  date: Date;
+  value: number;
+  description?: string;
+  nextValue?: number;
+}
 
 const KPIDataPage = async () => {
-  const [kpiData, descriptions, rawSystems, rawServices, rawItems] = await Promise.all([
-    prisma.kPI_Data.findMany(),
+  const session = await auth();
+  
+  // Force REPORTER role for testing
+  const userRole = 'REPORTER';
+  const isReporter = true;
+  const isAdmin = false;
+  const userId = session?.user?.id;
+
+  console.log('User role:', userRole);
+  console.log('isReporter:', isReporter);
+
+  // Get user's allowed items if REPORTER
+  let userItemIds: number[] = [];
+  if (isReporter && userId) {
+    try {
+      const userItems = await prisma.userItem.findMany({
+        where: { userId: parseInt(userId, 10) },
+        select: { itemId: true }
+      });
+      userItemIds = userItems.map(ui => ui.itemId);
+      console.log('User has access to item IDs:', userItemIds);
+    } catch (error) {
+      console.error('Error fetching user items:', error);
+    }
+  }
+
+  // Build the where clause for KPI data query
+  const kpiWhere = isReporter && userItemIds.length > 0 
+    ? { itemId: { in: userItemIds } } 
+    : isReporter 
+      ? { itemId: -1 } // No items assigned to REPORTER
+      : {}; // No filter for non-REPORTER users
+
+  console.log('KPI query filter:', kpiWhere);
+
+  // Get all necessary data in parallel
+  const [allKpiData, descriptions, rawSystems, rawServices, rawItems] = await Promise.all([
+    prisma.kPI_Data.findMany({
+      where: kpiWhere,
+      include: {
+        item: true,
+        service: true,
+        system: true,
+      },
+      orderBy: {
+        date: 'desc',
+      },
+    }) as Promise<KpiData[]>,
     prisma.description.findMany(),
     prisma.system.findMany(),
     prisma.service.findMany(),
-    prisma.item.findMany()
+    isReporter && userItemIds.length > 0
+      ? prisma.item.findMany({ 
+          where: { id: { in: userItemIds } },
+          select: { id: true, name: true, description: true }
+        })
+      : prisma.item.findMany({ select: { id: true, name: true, description: true } }),
   ]);
+  
+  console.log(`Fetched ${allKpiData.length} KPI records`);
+  if (allKpiData.length > 0) {
+    console.log('Sample KPI records:', allKpiData.slice(0, 3).map(d => ({
+      id: d.id,
+      itemId: d.itemId,
+      itemName: d.item?.name,
+      date: d.date,
+      value: d.value
+    })));
+  } else {
+    console.warn('No KPI records found with the current filter');
+  }
 
-  console.log(kpiData)
-
-  // Transform kpiData to the required structure
-  const transformedData = kpiData.map(item => {
+  // Transform kpiData to the required structure for the table
+  const transformedData = allKpiData.map(item => {
     const date = new Date(item.date);
     const formattedDate = `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
     
-    // For demo purposes, nextValue is initially the same as value
-    // In a real app, this would come from your database or be calculated
-    const nextValue = item.value;
-    
     return {
+      id: item.id,
       date: formattedDate,
-      itemName: rawItems.find(i => i.id === item.itemId)?.name || 'Unknown Item',
-      serviceName: rawServices.find(s => s.id === item.serviceId)?.name || 'Unknown Service',
-      systemName: rawSystems.find(sys => sys.id === item.systemId)?.name || 'Unknown System',
+      itemName: item.item?.name || 'N/A',
+      serviceName: item.service?.name || 'N/A',
+      systemName: item.system?.name || 'N/A',
       value: item.value,
-      nextValue: nextValue
+      nextValue: item.value, // Next Value will be the same as Value
+      description: item.description || '',
+      itemId: item.itemId,
     };
   });
 
+  // Transform systems data to the required structure
+  const transformedSystems = rawSystems.map(system => ({
+    id: system.id,
+    name: system.name,
+    description: system.description || '',
+  }));
+
+  const transformedServices = rawServices.map(service => ({
+    id: service.id,
+    name: service.name,
+    description: service.description || '',
+  }));
+
+  const transformedItems = rawItems.map(item => ({
+    id: item.id,
+    name: item.name,
+    description: item.description || '',
+  }));
+
   return (
     <div className="p-4">
-    <h1 className="text-3xl font-bold mb-4">KPI Data Management</h1>
-    <KPIForm services={rawServices.map(service => service.name)} items={rawItems.map(item => item.name)} systems={rawSystems.map(system => system.name)} />
-    <button 
-      type="submit" 
-      className="mt-2 px-6 py-2.5 bg-blue-500 text-white rounded-md 
-                hover:bg-blue-600 transition-colors duration-200 w-32"
-    >
-      Add Data
-    </button>
-    <KPITable data={transformedData} />
-  </div>
+      <h1 className="text-2xl font-bold mb-4">KPI Adatok</h1>
+      <KPITable 
+        data={transformedData} 
+
+        systems={transformedSystems}
+        services={transformedServices}
+        items={transformedItems}
+      />
+    </div>
   );
 };
 
