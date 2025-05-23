@@ -3,14 +3,20 @@ import { ThemeToggleButton } from "@/components/common/ThemeToggleButton";
 import NotificationDropdown from "@/components/header/NotificationDropdown";
 import UserDropdown from "@/components/header/UserDropdown";
 import { useSidebar } from "@/context/SidebarContext";
+import { useSession } from 'next-auth/react';
 import Image from "next/image";
 import Link from "next/link";
 import React, { useState, useEffect, useRef } from "react";
 
 const AppHeader: React.FC = () => {
   const [isApplicationMenuOpen, setApplicationMenuOpen] = useState(false);
-
+  const { data: session } = useSession();
   const { isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
+  
+  // This will force a re-render when session changes
+  useEffect(() => {
+    // This effect will run whenever the session changes
+  }, [session]);
 
   const handleToggle = () => {
     if (window.innerWidth >= 1024) {

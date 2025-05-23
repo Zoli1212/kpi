@@ -8,7 +8,6 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { authenticate } from "@/lib/auth-actions";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 
 type FormState = {
@@ -19,16 +18,15 @@ export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [state, formAction, isPending] = useActionState<FormState, FormData>(authenticate, null);
-  const router = useRouter();
+
 
   useEffect(() => {
     if (state?.message === 'success') {
-      router.push('/dashboard');
-      router.refresh();
+      window.location.href = '/dashboard';
     } else if (state?.message) {
       toast.error(state.message);
     }
-  }, [state, router]);
+  }, [state]);
 
   return (
     <div className="flex flex-col flex-1 lg:w-1/2 w-full">

@@ -1,5 +1,3 @@
-ALTER TABLE _UserServices RENAME TO UserServices;
-
 INSERT INTO UserServices (userId, serviceId)
 SELECT u.id, s.id FROM User u, Service s WHERE u.name = 'Bende Zsolt' AND s.name = 'Adatközponti szolgáltatások';
 
