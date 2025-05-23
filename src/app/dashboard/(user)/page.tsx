@@ -1,6 +1,6 @@
 import React from 'react';
 import { auth } from '@/auth';
-import KPITable from '@/components/KPITable';
+import DisplayComponent from '@/components/DisplayComponent';
 import prisma from '@/lib/prisma';
 import { Role } from '@prisma/client';
 
@@ -140,16 +140,12 @@ const KPIDataPage = async () => {
   }));
 
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">KPI Adatok</h1>
-      <KPITable 
-        data={transformedData} 
-
-        systems={transformedSystems}
-        services={transformedServices}
-        items={transformedItems}
-      />
-    </div>
+    <DisplayComponent
+      data={transformedData} 
+      systems={transformedSystems}
+      services={transformedServices}
+      items={transformedItems}
+    />
   );
 };
 
