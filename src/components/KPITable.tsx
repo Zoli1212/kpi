@@ -1,5 +1,5 @@
 'use client'
-import React from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { 
   useTable, 
   HeaderGroup, 
@@ -10,15 +10,21 @@ import {
   Row,
   Cell
 } from 'react-table';
+import { format, parseISO } from 'date-fns';
+import { hu } from 'date-fns/locale';
 
 // Define the exact shape of our row data
 type KPIRowData = {
+  id: number;
+  itemId: number;
   itemName: string;
   serviceName: string;
   systemName: string;
   value: number;
   nextValue: number;
-  date?: string;
+  date: string;
+  originalDate?: string;
+  description?: string;
 };
 
 // Define the table data type
@@ -34,45 +40,90 @@ interface KPITableProps {
 }
 
 const KPITable: React.FC<KPITableProps> = ({ data }) => {
-  // Get the latest date from the data
-  const latestDate = React.useMemo(() => {
-    if (!data || data.length === 0) return '';
-    const dates = data.map(item => item.date).filter(Boolean) as string[];
-    if (dates.length === 0) return '';
-    return dates.sort().pop() || '';
+  console.log('KPITable received data:', data);
+  
+  if (!data || data.length === 0) {
+    console.log('No data provided to KPITable');
+    return (
+      <div className="p-4 bg-yellow-50 border-l-4 border-yellow-400">
+        <p className="text-yellow-700">Nincs megjeleníthető adat</p>
+        <p className="text-yellow-600 text-sm">A táblázat üres, mert nincs megjeleníthető adat.</p>
+      </div>
+    );
+  }
+  // Format date for display
+  const formatDisplayDate = (dateString: string) => {
+    try {
+      const date = parseISO(dateString);
+      return format(date, 'yyyy. MMMM', { locale: hu });
+    } catch (error) {
+      return dateString;
+    }
+  };
+
+  // Format number based on type (integer or float)
+  const formatNumber = (value: number, isCurrentMonth: boolean = false) => {
+    return new Intl.NumberFormat('hu-HU', {
+      minimumFractionDigits: isCurrentMonth ? 0 : 2,
+      maximumFractionDigits: isCurrentMonth ? 0 : 2,
+      useGrouping: true
+    }).format(value);
+  };
+
+  // Transform data for the table
+  const tableData = useMemo<KPIRowData[]>(() => {
+    console.log('Transforming table data');
+    const transformed = data.map((item, index) => {
+      console.log(`Item ${index}:`, item);
+      return {
+        ...item,
+        // Ensure all required fields have values
+        id: item.id || index,
+        itemId: item.itemId || 0,
+        value: item.value ?? 0,
+        nextValue: item.nextValue ?? 0,
+        date: item.date || new Date().toISOString(),
+        originalDate: item.originalDate || item.date
+      };
+    });
+    console.log('Transformed data:', transformed);
+    return transformed;
   }, [data]);
 
-  // Transform data to include next month's values
-  const tableData = React.useMemo<KPIRowData[]>(() => {
-    return data.map(({ date, value, itemName, serviceName, systemName, nextValue }) => ({
-      itemName,
-      serviceName,
-      systemName,
-      value,
-      nextValue: nextValue ?? value, // Use provided nextValue or fallback to value
-      date
-    }));
+  // Get the current and next month for headers
+  const { currentMonth, nextMonth } = useMemo(() => {
+    if (!data || data.length === 0) return { currentMonth: '', nextMonth: '' };
+    
+    try {
+      const firstItem = data[0];
+      const currentDate = firstItem.originalDate ? 
+        parseISO(firstItem.originalDate) : 
+        new Date();
+        
+      const nextMonthDate = new Date(
+        currentDate.getFullYear(), 
+        currentDate.getMonth() + 1, 
+        1
+      );
+      
+      return {
+        currentMonth: format(currentDate, 'yyyy. MMMM', { locale: hu }),
+        nextMonth: format(nextMonthDate, 'yyyy. MMMM', { locale: hu })
+      };
+    } catch (error) {
+      console.error('Error calculating months:', error);
+      return { currentMonth: '', nextMonth: '' };
+    }
   }, [data]);
 
-  // Calculate next month's date for the header
-  const nextMonthDate = React.useMemo(() => {
-    if (!latestDate) return '';
-    const [year, month] = latestDate.split('.').map(Number);
-    // Create a date object for the first day of the current month
-    const currentDate = new Date(year, month - 1, 1);
-    // Add one month
-    const nextDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
-    return `${nextDate.getFullYear()}.${String(nextDate.getMonth() + 1).padStart(2, '0')}.01`;
-  }, [latestDate]);
+  // State for editable values
+  const [editableValues, setEditableValues] = useState<Record<number, number>>({});
 
-  // State to track editable values
-  const [editableValues, setEditableValues] = React.useState<Record<number, number>>({});
-
-  // Update editable value when data changes
-  React.useEffect(() => {
+  // Update editable values when data changes
+  useEffect(() => {
     const initialValues = data.reduce<Record<number, number>>((acc, item, index) => ({
       ...acc,
-      [index]: item.nextValue ?? item.value // Use nextValue or fallback to value
+      [index]: item.nextValue
     }), {});
     
     setEditableValues(prev => ({
@@ -81,7 +132,7 @@ const KPITable: React.FC<KPITableProps> = ({ data }) => {
     }));
   }, [data]);
 
-  // Handle value change
+  // Handle value change for next month's value
   const handleValueChange = (index: number, value: string) => {
     const numValue = parseFloat(value);
     if (!isNaN(numValue)) {
@@ -91,62 +142,96 @@ const KPITable: React.FC<KPITableProps> = ({ data }) => {
       }));
     }
   };
+  
+  // Handle saving the next month's value
+  const handleSave = (row: KPIRowData, value: number) => {
+    console.log('Saving value:', {
+      itemId: row.itemId,
+      value,
+      date: row.originalDate || row.date
+    });
+    // Here you would typically make an API call to save the value
+    // For now, we'll just log it
+  };
 
   // Define columns with proper typing
-  const columns = React.useMemo((): Column<KPIRowData>[] => {
+  const columns = useMemo((): Column<KPIRowData>[] => {
     return [
       {
-        Header: 'Item Name',
+        Header: 'Tétel',
         accessor: 'itemName',
         id: 'itemName',
+        Cell: ({ value }) => <div className="font-medium">{value}</div>,
       },
       {
-        Header: 'Service Name',
+        Header: 'Szolgáltatás',
         accessor: 'serviceName',
         id: 'serviceName',
       },
       {
-        Header: 'System Name',
+        Header: 'Rendszer',
         accessor: 'systemName',
         id: 'systemName',
       },
       {
-        Header: `Value (${latestDate || 'Date'})`,
-        accessor: 'value' as const,
+        Header: () => <div className="text-center">Aktuális hónap<br/>{currentMonth}</div>,
+        accessor: 'value',
         id: 'value',
+        Cell: ({ value }: { value: number }) => (
+          <div className="text-right pr-4 font-medium">
+            {formatNumber(value, true)}
+          </div>
+        ),
       },
       {
-        Header: `Next Value (${nextMonthDate || 'Next Month'})`,
+        Header: () => <div className="text-center">Következő hónap<br/>{nextMonth}</div>,
         id: 'nextValue',
-        accessor: 'nextValue' as const,
         Cell: ({ row }: { row: { index: number; original: KPIRowData } }) => {
           const value = editableValues[row.index] ?? row.original.nextValue;
+          const isChanged = value !== row.original.nextValue;
+          
           return (
-            <input
-              type="number"
-              className="w-20 p-1 border rounded"
-              value={value}
-              onChange={(e) => handleValueChange(row.index, e.target.value)}
-              onClick={(e) => e.stopPropagation()}
-              step="0.01"
-              min="0"
-            />
+            <div className="flex items-center justify-end space-x-2">
+              <input
+                type="number"
+                className={`w-32 p-1 border rounded text-right ${isChanged ? 'border-yellow-400 bg-yellow-50' : 'border-gray-300'}`}
+                value={value}
+                onChange={(e) => handleValueChange(row.index, e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                step="0.01"
+                min="0"
+              />
+              {isChanged && (
+                <button
+                  onClick={() => handleSave(row.original, value)}
+                  className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+                >
+                  Mentés
+                </button>
+              )}
+            </div>
           );
         },
       },
     ];
-  }, [latestDate, nextMonthDate, editableValues]);
+  }, [currentMonth, nextMonth, editableValues]);
 
   const tableInstance = useTable<KPIRowData>(
     {
       columns,
       data: tableData,
       defaultColumn: {
-        Cell: ({ value }: { value: unknown }) => value !== undefined ? String(value) : '-',
+        Cell: ({ value }: { value: unknown }) => {
+          const displayValue = value !== undefined ? String(value) : '-';
+          console.log('Rendering cell:', { value, displayValue });
+          return displayValue;
+        },
       },
     },
     useRowSelect,
   ) as TableInstance<KPIRowData>;
+  
+  console.log('Table instance:', tableInstance);
 
   const {
     getTableProps,
@@ -168,7 +253,7 @@ const KPITable: React.FC<KPITableProps> = ({ data }) => {
                   <th
                     {...headerProps}
                     key={headerProps.key}
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
                     {column.render('Header')}
                   </th>
@@ -188,7 +273,7 @@ const KPITable: React.FC<KPITableProps> = ({ data }) => {
                     <td
                       {...cellProps}
                       key={cell.column.id}
-                      className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                      className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 align-top"
                     >
                       {cell.render('Cell')}
                     </td>
