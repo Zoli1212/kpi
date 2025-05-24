@@ -48,9 +48,6 @@ const DisplayComponent: React.FC<DisplayComponentProps> = ({
 
   // Reset filters when data changes
   useEffect(() => {
-    console.log('Data changed, resetting filters');
-    console.log('First data item:', data[0]);
-    
     // Set default date to the most recent date in the data
     if (data.length > 0) {
       const dates = data.map(item => new Date(item.date));
@@ -92,8 +89,12 @@ const DisplayComponent: React.FC<DisplayComponentProps> = ({
     if (!dateStr) return new Date();
     if (dateStr instanceof Date) return dateStr;
     
-    // Try parsing ISO string
-    const isoDate = new Date(dateStr);
+    // Normalize DB format: '2025-01-01 00:00:00.000' -> '2025-01-01T00:00:00.000'
+    const normalized = typeof dateStr === 'string' && dateStr.includes(' ')
+      ? dateStr.replace(' ', 'T')
+      : dateStr;
+    
+    const isoDate = new Date(normalized);
     if (!isNaN(isoDate.getTime())) return isoDate;
     
     // Try parsing other formats if needed
@@ -110,94 +111,78 @@ const DisplayComponent: React.FC<DisplayComponentProps> = ({
 
   // Filter data based on selected month and other filters
   const filteredData = useMemo(() => {
-    console.log('Filtering data with selectedDate:', selectedDate);
-    console.log('Input data length:', data.length);
-    
     if (!selectedDate) {
-      console.log('No date selected');
       return [];
     }
-    
-    // Get the selected month and year
+
+    // User által kért egyszerű logika: minden itemId-re külön sort + nextValue
+    const grouped = data.reduce((acc, rec) => {
+      if (!acc[rec.itemId]) acc[rec.itemId] = [];
+      acc[rec.itemId].push({ ...rec });
+      return acc;
+    }, {} as Record<string, any[]>);
+
+    const processedData: any[] = [];
+    Object.values(grouped).forEach(records => {
+      // Mindig Date objektummal hasonlíts!
+      const sorted = [...records].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      for (let i = 0; i < sorted.length - 1; i++) {
+
+        sorted[i].nextValue = sorted[i + 1].value;
+      }
+      if (sorted.length) sorted[sorted.length - 1].nextValue = 0;
+      processedData.push(...sorted);
+    });
+    // Debug: nézd meg, hogy processedData-ban helyes-e a nextValue!
+    console.log('DEBUG processedData:', processedData);
+
+    // Ezután szűröm a processedData-t a kiválasztott hónapra és filterekre
     const selectedMonth = selectedDate.getMonth() + 1;
     const selectedYear = selectedDate.getFullYear();
     const selectedMonthYear = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
-    
-    // Calculate next month
-    const nextMonthDate = new Date(selectedYear, selectedDate.getMonth() + 1, 1);
-    const nextMonth = nextMonthDate.getMonth() + 1;
-    const nextMonthYear = nextMonthDate.getFullYear();
-    const nextMonthYearStr = `${nextMonthYear}-${String(nextMonth).padStart(2, '0')}`;
-    
-    console.log('Selected month:', selectedMonthYear, 'Next month:', nextMonthYearStr);
-    
-    // Get all unique items
-    const allItems = Array.from(new Set(data.map(item => item.itemId)));
-    
-    // Create a map of all items with their latest data
-    const itemsMap = new Map();
-    
-    data.forEach(record => {
-      const itemDate = parseDate(record.date);
-      const month = itemDate.getMonth() + 1;
-      const year = itemDate.getFullYear();
-      const monthYear = `${year}-${String(month).padStart(2, '0')}`;
-      
-      const itemKey = `${record.itemId}-${monthYear}`;
-      
-      // Only keep the latest record for each item in each month
-      if (!itemsMap.has(itemKey) || new Date(record.date) > new Date(itemsMap.get(itemKey).date)) {
-        itemsMap.set(itemKey, {
-          ...record,
-          monthYear,
-          date: record.date
-        });
+
+    const filtered = processedData.filter(record => {
+      const recordDate = parseDate(record.date);
+      const recordMonthYear = `${recordDate.getFullYear()}-${String(recordDate.getMonth() + 1).padStart(2, '0')}`;
+      const matchesMonth = recordMonthYear === selectedMonthYear;
+      const matchesItem = selectedItem === 'Összes tétel' || record.itemName === selectedItem;
+      const matchesService = selectedService === 'Összes szolgáltatás' || record.serviceName === selectedService;
+      const matchesSystem = selectedSystem === 'Összes rendszer' || record.systemName === selectedSystem;
+      return matchesMonth && matchesItem && matchesService && matchesSystem;
+    });
+
+    // Debug: listázzuk ki a sorokat
+    console.log('KPI sorok:');
+    filtered.forEach(row => {
+      console.log(`itemId: ${row.itemId}, date: ${row.date}, value: ${row.value}, nextValue: ${row.nextValue}, itemName: ${row.itemName}, serviceName: ${row.serviceName}, systemName: ${row.systemName}`);
+    });
+
+    // --- ÚJ: Ha nincs találat, jelenjen meg minden itemId-re egy 0-ás sor ---
+    if (filtered.length === 0) {
+      // Vedd az összes itemId-t, ami a filtereknek megfelel
+      let itemsToShow = Object.values(grouped).map(records => records[0]);
+      if (selectedItem !== 'Összes tétel') {
+        itemsToShow = itemsToShow.filter(row => row.itemName === selectedItem);
       }
-    });
-    
-    // Create result with all items for the selected month
-    const result = allItems.map(itemId => {
-      // Find the item's data for the selected month
-      const currentMonthKey = `${itemId}-${selectedMonthYear}`;
-      const currentMonthData = itemsMap.get(currentMonthKey);
-      
-      // Find the item's data for the next month
-      const nextMonthKey = `${itemId}-${nextMonthYearStr}`;
-      const nextMonthData = itemsMap.get(nextMonthKey);
-      
-      // Get item details from any record of this item
-      const anyRecord = data.find(r => r.itemId === itemId) || {};
-      
-      return {
-        id: itemId,
-        itemId,
-        itemName: anyRecord.itemName || 'Névtelen tétel',
-        serviceName: anyRecord.serviceName || 'Nincs szolgáltatás',
-        systemName: anyRecord.systemName || 'Nincs rendszer',
-        value: currentMonthData?.value ?? 0,
-        nextValue: nextMonthData?.value ?? 0,
-        date: currentMonthData?.date || new Date(selectedYear, selectedMonth - 1, 1).toISOString(),
-        monthYear: selectedMonthYear,
-        description: anyRecord.description || '',
-      };
-    });
-    
-    // Apply additional filters
-    const filtered = result.filter(item => {
-      const matchesItem = selectedItem === 'Összes tétel' || item.itemName === selectedItem;
-      const matchesService = selectedService === 'Összes szolgáltatás' || item.serviceName === selectedService;
-      const matchesSystem = selectedSystem === 'Összes rendszer' || item.systemName === selectedSystem;
-      
-      return matchesItem && matchesService && matchesSystem;
-    });
-    
+      if (selectedService !== 'Összes szolgáltatás') {
+        itemsToShow = itemsToShow.filter(row => row.serviceName === selectedService);
+      }
+      if (selectedSystem !== 'Összes rendszer') {
+        itemsToShow = itemsToShow.filter(row => row.systemName === selectedSystem);
+      }
+      return itemsToShow.map(row => ({
+        ...row,
+        value: 0,
+        nextValue: 0,
+        date: `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`,
+        originalDate: `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`,
+        description: '',
+      }));
+    }
+    // --- /ÚJ ---
+
     return filtered;
   }, [data, selectedDate, selectedItem, selectedService, selectedSystem]);
-  
-  // Debug filtered data
-  useEffect(() => {
-    console.log('Filtered data:', filteredData);
-  }, [filteredData]);
 
   return (
     <div className="p-4">

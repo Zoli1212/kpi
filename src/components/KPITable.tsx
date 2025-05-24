@@ -166,37 +166,15 @@ const KPITable: React.FC<KPITableProps> = ({
         ),
       },
       {
-        Header: () => <div className="text-center">Következő hónap<br/>{nextMonth}</div>,
+        Header: () => <div className="text-center">Következő hónap<br />{nextMonth}</div>,
         id: 'nextValue',
-        Cell: ({ row }: { row: { index: number; original: KPIRowData } }) => {
-          const value = editableValues[row.index] ?? row.original.nextValue;
-          const isChanged = value !== row.original.nextValue;
-          
-          return (
-            <div className="flex items-center justify-end space-x-2">
-              <input
-                type="number"
-                className={`w-32 p-1 border rounded text-right ${isChanged ? 'border-yellow-400 bg-yellow-50' : 'border-gray-300'}`}
-                value={value}
-                onChange={(e) => handleValueChange(row.index, e.target.value)}
-                onClick={(e) => e.stopPropagation()}
-                step="0.01"
-                min="0"
-              />
-              {isChanged && (
-                <button
-                  onClick={() => handleSave(row.original, value)}
-                  className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
-                >
-                  Mentés
-                </button>
-              )}
-            </div>
-          );
-        },
-      },
+        accessor: 'nextValue',
+        Cell: ({ value }: { value: number }) => (
+          <div className="text-right pr-2">{value}</div>
+        )
+      }
     ];
-  }, [currentMonth, nextMonth, editableValues]);
+  }, [currentMonth, nextMonth]);
 
   const tableInstance = useTable<KPIRowData>(
     {
