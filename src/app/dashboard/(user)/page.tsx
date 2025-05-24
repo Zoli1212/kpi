@@ -102,23 +102,33 @@ const KPIDataPage = async () => {
     console.warn('No KPI records found with the current filter');
   }
 
-  // Transform kpiData to the required structure for the table
-  const transformedData = allKpiData.map(item => {
-    const date = new Date(item.date);
-    const formattedDate = `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
-    
-    return {
-      id: item.id,
-      date: formattedDate,
-      itemName: item.item?.name || 'N/A',
-      serviceName: item.service?.name || 'N/A',
-      systemName: item.system?.name || 'N/A',
-      value: item.value,
-      nextValue: item.value, // Next Value will be the same as Value
-      description: item.description || '',
-      itemId: item.itemId,
-    };
+  // First, create a map to store unique KPI records by itemId
+  const uniqueKpiDataMap = new Map<number, any>();
+  
+  // Process allKpiData and filter out duplicates based on itemId
+  allKpiData.forEach(item => {
+    if (!uniqueKpiDataMap.has(item.itemId)) {
+      const date = new Date(item.date);
+      const formattedDate = `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
+      
+      uniqueKpiDataMap.set(item.itemId, {
+        id: item.id,
+        date: formattedDate,
+        itemName: item.item?.name || 'N/A',
+        serviceName: item.service?.name || 'N/A',
+        systemName: item.system?.name || 'N/A',
+        value: item.value,
+        nextValue: item.value,
+        description: item.description || '',
+        itemId: item.itemId,
+      });
+    }
   });
+  
+  // Convert the map values back to an array
+  const transformedData = Array.from(uniqueKpiDataMap.values());
+  
+  console.log(`Filtered ${allKpiData.length - transformedData.length} duplicate KPI records`);
 
   // Transform systems data to the required structure
   const transformedSystems = rawSystems.map(system => ({
