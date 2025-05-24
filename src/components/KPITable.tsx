@@ -37,9 +37,15 @@ interface KPITableProps {
   systems: Array<{ id: number; name: string; description: string }>;
   services: Array<{ id: number; name: string; description: string }>;
   items: Array<{ id: number; name: string; description: string }>;
+  currentMonth: string;
+  nextMonth: string;
 }
 
-const KPITable: React.FC<KPITableProps> = ({ data }) => {
+const KPITable: React.FC<KPITableProps> = ({ 
+  data, 
+  currentMonth, 
+  nextMonth 
+}) => {
   console.log('KPITable received data:', data);
   
   if (!data || data.length === 0) {
@@ -90,31 +96,7 @@ const KPITable: React.FC<KPITableProps> = ({ data }) => {
     return transformed;
   }, [data]);
 
-  // Get the current and next month for headers
-  const { currentMonth, nextMonth } = useMemo(() => {
-    if (!data || data.length === 0) return { currentMonth: '', nextMonth: '' };
-    
-    try {
-      const firstItem = data[0];
-      const currentDate = firstItem.originalDate ? 
-        parseISO(firstItem.originalDate) : 
-        new Date();
-        
-      const nextMonthDate = new Date(
-        currentDate.getFullYear(), 
-        currentDate.getMonth() + 1, 
-        1
-      );
-      
-      return {
-        currentMonth: format(currentDate, 'yyyy. MMMM', { locale: hu }),
-        nextMonth: format(nextMonthDate, 'yyyy. MMMM', { locale: hu })
-      };
-    } catch (error) {
-      console.error('Error calculating months:', error);
-      return { currentMonth: '', nextMonth: '' };
-    }
-  }, [data]);
+  console.log('KPITable received months:', { currentMonth, nextMonth });
 
   // State for editable values
   const [editableValues, setEditableValues] = useState<Record<number, number>>({});

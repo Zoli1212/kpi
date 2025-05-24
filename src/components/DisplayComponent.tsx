@@ -4,7 +4,7 @@ import KPITable from './KPITable'
 import FilterComponent from './FilterComponent'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
-import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO, addMonths } from 'date-fns'
+import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO, addMonths } from 'date-fns';
 import { hu } from 'date-fns/locale'
 
 interface TableData {
@@ -45,6 +45,25 @@ const DisplayComponent: React.FC<DisplayComponentProps> = ({
   const [selectedItem, setSelectedItem] = useState('Összes tétel')
   const [selectedService, setSelectedService] = useState('Összes szolgáltatás')
   const [selectedSystem, setSelectedSystem] = useState('Összes rendszer')
+
+  // Reset filters when data changes
+  useEffect(() => {
+    console.log('Data changed, resetting filters');
+    console.log('First data item:', data[0]);
+    
+    // Set default date to the most recent date in the data
+    if (data.length > 0) {
+      const dates = data.map(item => new Date(item.date));
+      const mostRecentDate = new Date(Math.max(...dates.map(date => date.getTime())));
+      setSelectedDate(mostRecentDate);
+    } else {
+      setSelectedDate(new Date());
+    }
+    
+    setSelectedItem('Összes tétel');
+    setSelectedService('Összes szolgáltatás');
+    setSelectedSystem('Összes rendszer');
+  }, [data]);
 
   // Get unique values for filter options
   const serviceOptions = useMemo(() => 
@@ -93,86 +112,78 @@ const DisplayComponent: React.FC<DisplayComponentProps> = ({
   const filteredData = useMemo(() => {
     console.log('Filtering data with selectedDate:', selectedDate);
     console.log('Input data length:', data.length);
-    console.log('Sample input data:', data.slice(0, 2));
     
     if (!selectedDate) {
-      console.log('No date selected, returning empty array');
+      console.log('No date selected');
       return [];
     }
     
-    const start = startOfMonth(selectedDate);
-    const end = endOfMonth(selectedDate);
-    const nextMonthStart = addMonths(start, 1);
-    const nextMonthEnd = addMonths(end, 1);
+    // Get the selected month and year
+    const selectedMonth = selectedDate.getMonth() + 1;
+    const selectedYear = selectedDate.getFullYear();
+    const selectedMonthYear = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
     
-    console.log('Date range:', { 
-      start: format(start, 'yyyy-MM-dd'), 
-      end: format(end, 'yyyy-MM-dd'),
-      nextMonthStart: format(nextMonthStart, 'yyyy-MM-dd'),
-      nextMonthEnd: format(nextMonthEnd, 'yyyy-MM-dd')
-    });
+    // Calculate next month
+    const nextMonthDate = new Date(selectedYear, selectedDate.getMonth() + 1, 1);
+    const nextMonth = nextMonthDate.getMonth() + 1;
+    const nextMonthYear = nextMonthDate.getFullYear();
+    const nextMonthYearStr = `${nextMonthYear}-${String(nextMonth).padStart(2, '0')}`;
     
-    // Transform all data first to ensure consistent format
-    const transformedData = data.map(record => {
+    console.log('Selected month:', selectedMonthYear, 'Next month:', nextMonthYearStr);
+    
+    // Get all unique items
+    const allItems = Array.from(new Set(data.map(item => item.itemId)));
+    
+    // Create a map of all items with their latest data
+    const itemsMap = new Map();
+    
+    data.forEach(record => {
       const itemDate = parseDate(record.date);
       const month = itemDate.getMonth() + 1;
       const year = itemDate.getFullYear();
+      const monthYear = `${year}-${String(month).padStart(2, '0')}`;
+      
+      const itemKey = `${record.itemId}-${monthYear}`;
+      
+      // Only keep the latest record for each item in each month
+      if (!itemsMap.has(itemKey) || new Date(record.date) > new Date(itemsMap.get(itemKey).date)) {
+        itemsMap.set(itemKey, {
+          ...record,
+          monthYear,
+          date: record.date
+        });
+      }
+    });
+    
+    // Create result with all items for the selected month
+    const result = allItems.map(itemId => {
+      // Find the item's data for the selected month
+      const currentMonthKey = `${itemId}-${selectedMonthYear}`;
+      const currentMonthData = itemsMap.get(currentMonthKey);
+      
+      // Find the item's data for the next month
+      const nextMonthKey = `${itemId}-${nextMonthYearStr}`;
+      const nextMonthData = itemsMap.get(nextMonthKey);
+      
+      // Get item details from any record of this item
+      const anyRecord = data.find(r => r.itemId === itemId) || {};
       
       return {
-        ...record,
-        id: record.id || 0,
-        itemId: record.itemId || 0,
-        itemName: record.itemName || 'Névtelen tétel',
-        serviceName: record.serviceName || 'Nincs szolgáltatás',
-        systemName: record.systemName || 'Nincs rendszer',
-        value: record.value || 0,
-        nextValue: record.nextValue || 0,
-        date: itemDate.toISOString(),
-        month,
-        year,
-        monthYear: `${year}-${String(month).padStart(2, '0')}`
+        id: itemId,
+        itemId,
+        itemName: anyRecord.itemName || 'Névtelen tétel',
+        serviceName: anyRecord.serviceName || 'Nincs szolgáltatás',
+        systemName: anyRecord.systemName || 'Nincs rendszer',
+        value: currentMonthData?.value ?? 0,
+        nextValue: nextMonthData?.value ?? 0,
+        date: currentMonthData?.date || new Date(selectedYear, selectedMonth - 1, 1).toISOString(),
+        monthYear: selectedMonthYear,
+        description: anyRecord.description || '',
       };
     });
-    
-    // Get current month and year for filtering
-    const currentMonth = selectedDate.getMonth() + 1;
-    const currentYear = selectedDate.getFullYear();
-    const currentMonthYear = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
-    
-    // Filter data for the selected month
-    const currentMonthData = transformedData.filter(item => {
-      return item.monthYear === currentMonthYear;
-    });
-    
-    console.log('Current month data:', currentMonthData);
-    
-    if (currentMonthData.length === 0) {
-      console.log('No data found for current month, showing all data');
-      return [];
-    }
-    
-    // Get next month's data for each item
-    const nextMonth = addMonths(selectedDate, 1);
-    const nextMonthYear = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}`;
-    
-    const dataWithNextMonth = currentMonthData.map(item => {
-      // Find next month's value for this item
-      const nextMonthItem = transformedData.find(d => 
-        d.itemId === item.itemId && 
-        d.monthYear === nextMonthYear
-      );
-      
-      return {
-        ...item,
-        nextValue: nextMonthItem?.value ?? item.nextValue,
-        originalDate: item.date
-      };
-    });
-    
-    console.log('Data with next month values:', dataWithNextMonth);
     
     // Apply additional filters
-    const filtered = dataWithNextMonth.filter(item => {
+    const filtered = result.filter(item => {
       const matchesItem = selectedItem === 'Összes tétel' || item.itemName === selectedItem;
       const matchesService = selectedService === 'Összes szolgáltatás' || item.serviceName === selectedService;
       const matchesSystem = selectedSystem === 'Összes rendszer' || item.systemName === selectedSystem;
@@ -180,20 +191,8 @@ const DisplayComponent: React.FC<DisplayComponentProps> = ({
       return matchesItem && matchesService && matchesSystem;
     });
     
-    console.log('Final filtered data:', filtered);
     return filtered;
   }, [data, selectedDate, selectedItem, selectedService, selectedSystem]);
-  
-  // Reset filters when data changes
-  useEffect(() => {
-    console.log('Data changed, resetting filters');
-    console.log('First data item:', data[0]);
-    
-    setSelectedDate(new Date());
-    setSelectedItem('Összes tétel');
-    setSelectedService('Összes szolgáltatás');
-    setSelectedSystem('Összes rendszer');
-  }, [data]);
   
   // Debug filtered data
   useEffect(() => {
@@ -305,6 +304,8 @@ const DisplayComponent: React.FC<DisplayComponentProps> = ({
               systems={systems}
               services={services}
               items={items}
+              currentMonth={format(selectedDate, 'yyyy. MMMM', { locale: hu })}
+              nextMonth={format(addMonths(selectedDate, 1), 'yyyy. MMMM', { locale: hu })}
             />
           ) : (
             <div className="text-center py-8 text-gray-500">

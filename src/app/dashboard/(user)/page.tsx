@@ -102,33 +102,30 @@ const KPIDataPage = async () => {
     console.warn('No KPI records found with the current filter');
   }
 
-  // First, create a map to store unique KPI records by itemId
-  const uniqueKpiDataMap = new Map<number, any>();
-  
-  // Process allKpiData and filter out duplicates based on itemId
-  allKpiData.forEach(item => {
-    if (!uniqueKpiDataMap.has(item.itemId)) {
-      const date = new Date(item.date);
-      const formattedDate = `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
-      
-      uniqueKpiDataMap.set(item.itemId, {
-        id: item.id,
-        date: formattedDate,
-        itemName: item.item?.name || 'N/A',
-        serviceName: item.service?.name || 'N/A',
-        systemName: item.system?.name || 'N/A',
-        value: item.value,
-        nextValue: item.value,
-        description: item.description || '',
-        itemId: item.itemId,
-      });
-    }
+  // Create an array of all KPI records with proper formatting
+  const transformedData = allKpiData.map(item => {
+    const date = new Date(item.date);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const monthYear = `${year}-${month}`;
+    
+    return {
+      id: item.id,
+      itemId: item.itemId,
+      itemName: item.item?.name || 'N/A',
+      serviceName: item.service?.name || 'N/A',
+      systemName: item.system?.name || 'N/A',
+      value: item.value ?? 0,
+      nextValue: 0, // Will be updated in DisplayComponent
+      date: `${year}-${month}-${day}`, // Ensure date is a string in YYYY-MM-DD format
+      monthYear,
+      description: item.description || '',
+    };
   });
   
-  // Convert the map values back to an array
-  const transformedData = Array.from(uniqueKpiDataMap.values());
-  
-  console.log(`Filtered ${allKpiData.length - transformedData.length} duplicate KPI records`);
+  console.log(`Processed ${transformedData.length} KPI records`);
+  console.log('Sample processed data:', transformedData.slice(0, 3));
 
   // Transform systems data to the required structure
   const transformedSystems = rawSystems.map(system => ({
