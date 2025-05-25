@@ -13,6 +13,7 @@ import {
 import { format, parseISO } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { saveKpiRow } from '@/app/actions/saveKpiRow';
+import { toast } from 'sonner';
 
 type KPIRowData = {
   id: number;
@@ -88,12 +89,12 @@ const handleSave = async (row: KPIRowData, value: number) => {
       date: row.originalDate || row.date,
     });
     if (result.success) {
-      alert('Sikeres mentés!');
+      toast.success('Sikeres mentés!');
     } else {
-      alert('Hiba a mentéskor: ' + (result.error || 'Ismeretlen hiba'));
+      toast.error('Hiba a mentéskor: ' + (result.error || 'Ismeretlen hiba'));
     }
   } catch (error: any) {
-    alert('Mentési hiba: ' + (error?.message || error));
+    toast.error('Mentési hiba: ' + (error?.message || error));
   }
 };
 

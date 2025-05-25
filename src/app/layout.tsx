@@ -5,6 +5,7 @@ import { SidebarProvider } from '@/context/SidebarContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { AuthProvider } from "@/providers/AuthProvider";
 import { auth } from "@/auth";
+import { Toaster } from 'sonner';
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -21,7 +22,9 @@ export default async function RootLayout({
       <body className={`${outfit.className} dark:bg-gray-900`}>
         <ThemeProvider>
           <AuthProvider session={session}>
-            <SidebarProvider>{children}</SidebarProvider>
+            <SidebarProvider>
+            <Toaster richColors position="top-right" />
+              {children}</SidebarProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

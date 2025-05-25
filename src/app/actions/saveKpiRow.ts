@@ -8,6 +8,8 @@ interface KpiRowInsert {
   date: string;
 }
 
+import { revalidatePath } from 'next/cache';
+
 export async function saveKpiRow(row: KpiRowInsert) {
   console.log("saveKpiRow called with:", row);
 
@@ -53,19 +55,20 @@ export async function saveKpiRow(row: KpiRowInsert) {
     const nextYear = lastDate.getFullYear() + (nextMonth > 11 ? 1 : 0);
     const nextMonthIndex = nextMonth % 12;
     const newDate = new Date(Date.UTC(nextYear, nextMonthIndex, 1, 0, 0, 0, 0));
-    // Formázd stringgé: 'YYYY-MM-01 00:00:00.000'
-    const formattedDate = newDate.toISOString().slice(0, 10) + ' 00:00:00.000';
+    // Formázd stringgé: ISO-8601 (pl. '2025-06-01T00:00:00.000Z')
+    const formattedDate = newDate.toISOString();
 
     // 3. Létrehozzuk az új sort: minden mezőt az előző sorból veszünk át, csak a date és value új
     let newKpiData: any = { ...lastRow };
     // Prisma visszaadja az id-t, created, modified, expired stb.-t is, ezeket NE vigyük át
     delete newKpiData.id;
     delete newKpiData.created;
+
     delete newKpiData.modified;
     delete newKpiData.expired;
     delete newKpiData.approverId;
     // Ezeket írjuk felül
-    newKpiData.date = newDate;
+    newKpiData.date = formattedDate;
     newKpiData.value = row.value;
 
     console.log(newKpiData, 'newKpiData')
@@ -73,6 +76,11 @@ export async function saveKpiRow(row: KpiRowInsert) {
     const result = await prisma.kPI_Data.create({
       data: newKpiData,
     });
+
+    revalidatePath(`/dashboard`);
+
+    // Sikeres mentés után dashboard újratöltése
+ 
     console.log("KPI row saved successfully:", result);
     return { success: true };
   } catch (error) {
