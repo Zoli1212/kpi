@@ -24,7 +24,7 @@ export const authConfig: NextAuthConfig = {
   callbacks: {
     jwt({ token, user, account, profile }) {
       if (user) {
-        token.role = (user as User & { role: string }).role || 'user';
+        token.role = (user as User & { role: string }).role || 'REPORTER';
         token.email = user.email;
       }
       return token;
@@ -79,7 +79,7 @@ export const authConfig: NextAuthConfig = {
           id: user.id.toString(),
           email: user.email,
           name: user.name,
-          role: 'user',
+          role: user.role,
         } as User;
       },
     }),
