@@ -169,9 +169,24 @@ const KPITable: React.FC<KPITableProps> = ({
         Header: () => <div className="text-center">Következő hónap<br />{nextMonth}</div>,
         id: 'nextValue',
         accessor: 'nextValue',
-        Cell: ({ value }: { value: number }) => (
-          <div className="text-right pr-2">{value}</div>
-        )
+        Cell: ({ value, row }: { value: number; row: any }) => {
+  // Ha 0, input mező
+  if (value === 0) {
+    return (
+      <input
+        type="number"
+        className="border rounded px-2 py-1 w-20 text-right focus:outline-none focus:ring-2 focus:ring-blue-400"
+        value={editableValues[row.index] ?? 0}
+        onChange={e => handleValueChange(row.index, e.target.value)}
+        style={{ minWidth: 60 }}
+      />
+    );
+  }
+  // Egyébként sima szöveg
+  return (
+    <div className="text-right pr-2">{value}</div>
+  );
+}
       }
     ];
   }, [currentMonth, nextMonth]);
