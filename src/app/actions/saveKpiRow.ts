@@ -4,12 +4,8 @@ import prisma from '@/lib/prisma';
 // Típus: minden mező, ami a KPI sorhoz kell
 interface KpiRowInsert {
   itemId: number;
-  serviceId: number;
-  systemId: number;
   value: number;
-  date: string; // '2025-04-01 00:00:00.000' formátum
-  userId: number;
-  companyId: number;
+  date: string;
 }
 
 export async function saveKpiRow(row: KpiRowInsert) {
@@ -18,12 +14,8 @@ export async function saveKpiRow(row: KpiRowInsert) {
   // Szerver oldali validáció
   const missingFields: string[] = [];
   if (!row.itemId) missingFields.push('itemId');
-  if (!row.serviceId) missingFields.push('serviceId');
-  if (!row.systemId) missingFields.push('systemId');
   if (typeof row.value === 'undefined' || row.value === null) missingFields.push('value');
   if (!row.date) missingFields.push('date');
-  if (!row.userId) missingFields.push('userId');
-  if (!row.companyId) missingFields.push('companyId');
 
   if (missingFields.length > 0) {
     console.error("Missing or invalid fields in KPI row:", missingFields, row);
@@ -38,16 +30,42 @@ export async function saveKpiRow(row: KpiRowInsert) {
   }
 
   try {
-    const result = await prisma.kPI_Data.create({
-      data: {
+    // 1. Lekérdezzük az utolsó KPI_Data sort ugyanazzal az itemId-val
+    const lastRow = await prisma.kPI_Data.findFirst({
+      where: {
         itemId: row.itemId,
-        serviceId: row.serviceId,
-        systemId: row.systemId,
-        value: row.value,
-        date: dateObj,
-        userId: row.userId,
-        companyId: row.companyId,
       },
+      orderBy: { date: 'desc' },
+    });
+
+    // Ha nincs előző sor, hibát dobunk
+    if (!lastRow) {
+      console.error("Nincs előző KPI sor, nem lehet menteni.");
+      return { success: false, error: "Nincs előző KPI sor, nem lehet menteni." };
+    }
+
+    console.log(lastRow, 'lastRow')
+
+    // 2. Meghatározzuk az új dátumot: mindig az előző sor hónapja +1 hónap
+    const lastDate = new Date(lastRow.date);
+    const newDate = new Date(lastDate.getFullYear(), lastDate.getMonth() + 1, 1);
+
+    // 3. Létrehozzuk az új sort: minden mezőt az előző sorból veszünk át, csak a date és value új
+    let newKpiData: any = { ...lastRow };
+    // Prisma visszaadja az id-t, created, modified, expired stb.-t is, ezeket NE vigyük át
+    delete newKpiData.id;
+    delete newKpiData.created;
+    delete newKpiData.modified;
+    delete newKpiData.expired;
+    delete newKpiData.approverId;
+    // Ezeket írjuk felül
+    newKpiData.date = newDate;
+    newKpiData.value = row.value;
+
+    console.log(newKpiData, 'newKpiData')
+
+    const result = await prisma.kPI_Data.create({
+      data: newKpiData,
     });
     console.log("KPI row saved successfully:", result);
     return { success: true };

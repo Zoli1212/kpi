@@ -12,6 +12,7 @@ import {
 } from 'react-table';
 import { format, parseISO } from 'date-fns';
 import { hu } from 'date-fns/locale';
+import { saveKpiRow } from '@/app/actions/saveKpiRow';
 
 type KPIRowData = {
   id: number;
@@ -77,14 +78,24 @@ const KPITable: React.FC<KPITableProps> = ({
 
   const nextValuesRef = useRef<Record<number, number>>({});
 
-  const handleSave = (row: KPIRowData, value: number) => {
-    console.log('Mentés:', {
+
+
+const handleSave = async (row: KPIRowData, value: number) => {
+  try {
+    const result = await saveKpiRow({
       itemId: row.itemId,
       value,
       date: row.originalDate || row.date,
     });
-    // API hívás vagy bármi más mentési logika ide jöhet
-  };
+    if (result.success) {
+      alert('Sikeres mentés!');
+    } else {
+      alert('Hiba a mentéskor: ' + (result.error || 'Ismeretlen hiba'));
+    }
+  } catch (error: any) {
+    alert('Mentési hiba: ' + (error?.message || error));
+  }
+};
 
   const columns = useMemo<Column<KPIRowData>[]>(() => {
     return [
@@ -159,12 +170,14 @@ const KPITable: React.FC<KPITableProps> = ({
                 onChange={handleInputChange}
                 className="border rounded px-2 py-1 w-20 text-right focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
-              <button
-                onClick={handleSaveClick}
-                className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
-              >
-                Mentés
-              </button>
+              {originalValue === 0 && (
+                <button
+                  onClick={handleSaveClick}
+                  className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+                >
+                  Mentés
+                </button>
+              )}
             </div>
           );
         },
