@@ -1,5 +1,5 @@
 "use server";
-import { AuthError } from "next-auth";
+
 import bcrypt from 'bcryptjs';
 import { db } from './db';
 import { signIn, signOut } from '@/auth';

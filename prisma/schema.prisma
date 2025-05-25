@@ -17,7 +17,7 @@ model User {
   created                DateTime    @default(now())
   modified               DateTime    @updatedAt
   expired                DateTime?
-  role                   Role @default(VIEWER)
+  role                   Role @default(REPORTER)
   
   // Relations
   userRights             UserRight[]

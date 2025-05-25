@@ -44,6 +44,8 @@ export const authOptions: NextAuthConfig = {
           where: { email: credentials.email as string },
         });
 
+        console.log(user, 'USER')
+
         if (!user || !user?.hashedPassword) {
           throw new Error("Invalid credentials");
         }
@@ -62,7 +64,7 @@ export const authOptions: NextAuthConfig = {
           id: user.id.toString(),
           email: user.email,
           name: user.name || '',
-          role: 'user',
+          role: user.role || 'REPORTER',
         } as any; // Type assertion to handle the role property
       },
     }),

@@ -2,7 +2,7 @@ import React from 'react';
 import { auth } from '@/auth';
 import DisplayComponent from '@/components/DisplayComponent';
 import prisma from '@/lib/prisma';
-import { Role } from '@prisma/client';
+
 
 type UserItem = {
   itemId: number;
@@ -31,6 +31,8 @@ interface KpiData {
 
 const KPIDataPage = async () => {
   const session = await auth();
+
+  console.log(session, 'SESSION')
   
   // Force REPORTER role for testing
   const userRole = 'REPORTER';
@@ -49,7 +51,7 @@ const KPIDataPage = async () => {
         where: { userId: parseInt(userId, 10) },
         select: { itemId: true }
       });
-      userItemIds = userItems.map(ui => ui.itemId);
+      userItemIds = userItems.map((ui: any) => ui.itemId);
       console.log('User has access to item IDs:', userItemIds);
     } catch (error) {
       console.error('Error fetching user items:', error);
@@ -91,7 +93,7 @@ const KPIDataPage = async () => {
   
   console.log(`Fetched ${allKpiData.length} KPI records`);
   if (allKpiData.length > 0) {
-    console.log('Sample KPI records:', allKpiData.slice(0, 3).map(d => ({
+    console.log('Sample KPI records:', allKpiData.slice(0, 3).map((d: any) => ({
       id: d.id,
       itemId: d.itemId,
       itemName: d.item?.name,
@@ -103,7 +105,7 @@ const KPIDataPage = async () => {
   }
 
   // Create an array of all KPI records with proper formatting
-  const transformedData = allKpiData.map(item => {
+  const transformedData = allKpiData.map((item: any) => {
     const date = new Date(item.date);
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -128,19 +130,19 @@ const KPIDataPage = async () => {
   console.log('Sample processed data:', transformedData.slice(0, 3));
 
   // Transform systems data to the required structure
-  const transformedSystems = rawSystems.map(system => ({
+  const transformedSystems = rawSystems.map((system: any) => ({
     id: system.id,
     name: system.name,
     description: system.description || '',
   }));
 
-  const transformedServices = rawServices.map(service => ({
+  const transformedServices = rawServices.map((service: any) => ({
     id: service.id,
     name: service.name,
     description: service.description || '',
   }));
 
-  const transformedItems = rawItems.map(item => ({
+  const transformedItems = rawItems.map((item: any) => ({
     id: item.id,
     name: item.name,
     description: item.description || '',
