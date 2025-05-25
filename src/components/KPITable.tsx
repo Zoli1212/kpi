@@ -174,10 +174,9 @@ const KPITable: React.FC<KPITableProps> = ({
   if (value === 0) {
     return (
       <input
-        type="number"
+        type="text"
         className="border rounded px-2 py-1 w-20 text-right focus:outline-none focus:ring-2 focus:ring-blue-400"
-        value={editableValues[row.index] ?? 0}
-        onChange={e => handleValueChange(row.index, e.target.value)}
+        defaultValue={'0'}
         style={{ minWidth: 60 }}
       />
     );
