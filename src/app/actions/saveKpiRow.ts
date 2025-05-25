@@ -48,7 +48,13 @@ export async function saveKpiRow(row: KpiRowInsert) {
 
     // 2. Meghatározzuk az új dátumot: mindig az előző sor hónapja +1 hónap
     const lastDate = new Date(lastRow.date);
-    const newDate = new Date(lastDate.getFullYear(), lastDate.getMonth() + 1, 1);
+    // Mindig a következő hónap első napja, 00:00:00, UTC
+    const nextMonth = lastDate.getMonth() + 1;
+    const nextYear = lastDate.getFullYear() + (nextMonth > 11 ? 1 : 0);
+    const nextMonthIndex = nextMonth % 12;
+    const newDate = new Date(Date.UTC(nextYear, nextMonthIndex, 1, 0, 0, 0, 0));
+    // Formázd stringgé: 'YYYY-MM-01 00:00:00.000'
+    const formattedDate = newDate.toISOString().slice(0, 10) + ' 00:00:00.000';
 
     // 3. Létrehozzuk az új sort: minden mezőt az előző sorból veszünk át, csak a date és value új
     let newKpiData: any = { ...lastRow };
