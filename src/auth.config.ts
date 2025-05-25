@@ -79,7 +79,7 @@ export const authConfig: NextAuthConfig = {
           id: user.id.toString(),
           email: user.email,
           name: user.name,
-          role: user.role,
+          role: user.role || 'REPORTER',
         } as User;
       },
     }),

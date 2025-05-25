@@ -36,8 +36,8 @@ const KPIDataPage = async () => {
   
   // Force REPORTER role for testing
   const userRole = session?.user?.role;
-  const isReporter = true || userRole === 'REPORTER';
-  const isAdmin = false;
+  const isReporter = userRole === 'REPORTER';
+  const isAdmin = userRole === 'ADMIN';
   const userId = session?.user?.id;
 
   console.log('User role:', userRole);
