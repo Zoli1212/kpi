@@ -18,6 +18,9 @@ interface TableData {
   description: string;
   itemId: number;
   originalDate?: string;
+  approved?: boolean;
+  nextApproved?: boolean;
+  nextId?: number;
 }
 
 interface FilterOption {
@@ -111,10 +114,15 @@ const DisplayComponent: React.FC<DisplayComponentProps> = ({
       // Mindig Date objektummal hasonlíts!
       const sorted = [...records].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
       for (let i = 0; i < sorted.length - 1; i++) {
-
         sorted[i].nextValue = sorted[i + 1].value;
+        sorted[i].nextApproved = sorted[i + 1].approved;
+        sorted[i].nextId = sorted[i + 1].id;
       }
-      if (sorted.length) sorted[sorted.length - 1].nextValue = 0;
+      if (sorted.length) {
+        sorted[sorted.length - 1].nextValue = 0;
+        sorted[sorted.length - 1].nextApproved = undefined;
+        sorted[sorted.length - 1].nextId = undefined;
+      }
       processedData.push(...sorted);
     });
     // Debug: nézd meg, hogy processedData-ban helyes-e a nextValue!
@@ -154,14 +162,19 @@ const DisplayComponent: React.FC<DisplayComponentProps> = ({
           date: `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`,
           originalDate: `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`,
           description: '',
+          approved: false,
+          nextApproved: undefined,
+          nextId: undefined,
         };
       }
     });
     // Debug: listázzuk ki a sorokat
     console.log('KPI sorok:');
     resultRows.forEach(row => {
-      console.log(`itemId: ${row.itemId}, date: ${row.date}, value: ${row.value}, nextValue: ${row.nextValue}, itemName: ${row.itemName}, serviceName: ${row.serviceName}, systemName: ${row.systemName}`);
+      console.log(`itemId: ${row.itemId}, date: ${row.date}, value: ${row.value}, nextValue: ${row.nextValue}, itemName: ${row.itemName}, serviceName: ${row.serviceName}, systemName: ${row.systemName}, approved: ${row.approved}, nextApproved: ${row.nextApproved}`);
     });
+    // Extra: log the whole array for easy inspection
+    console.log('DEBUG resultRows (full objects):', resultRows);
     return resultRows;
   }, [data, selectedDate, selectedItem, selectedService, selectedSystem]);
 

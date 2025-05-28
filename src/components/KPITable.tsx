@@ -126,8 +126,16 @@ const handleSave = async (row: KPIRowData, value: number) => {
         ),
         accessor: 'value',
         id: 'value',
-        Cell: ({ value }: { value: number }) => (
-          <div className="text-right pr-4 font-medium">
+        Cell: ({ row, value }: { row: any, value: number }) => (
+          <div
+            className={
+              "text-right font-medium " +
+              (row.original && row.original.approved === false
+                ? "border-2 border-red-500 rounded px-2 py-1 bg-white w-24"
+                : "px-2 py-1 w-24")
+            }
+            title={row.original && row.original.approved === false ? "Ez az érték még nincs jóváhagyva." : ""}
+          >
             {formatNumber(value, true)}
           </div>
         ),
@@ -159,13 +167,32 @@ const handleSave = async (row: KPIRowData, value: number) => {
             }
           };
 
-          const handleSaveClick = () => {
-            const value =
-              nextValuesRef.current[index] !== undefined
-                ? nextValuesRef.current[index]
-                : originalValue;
-            handleSave(row.original, value);
+          const handleSaveClick = async () => {
+            const valueToSave = inputValue !== undefined ? inputValue : originalValue;
+            const nextId = row.original.nextId;
+            const itemId = row.original.itemId;
+            // Következő hónap dátuma
+            const nextDate = (() => {
+              const d = new Date(row.original.date);
+              d.setMonth(d.getMonth() + 1);
+              d.setDate(1);
+              d.setHours(0, 0, 0, 0);
+              return d.toISOString();
+            })();
+            // Szerver action hívás: ha van nextId, update, ha nincs, create
+            const payload = nextId
+              ? { id: nextId, itemId, value: valueToSave, date: nextDate }
+              : { itemId, value: valueToSave, date: nextDate };
+            const result = await saveKpiRow(payload);
+            if (result.success) {
+              toast.success(nextId ? 'A hónap értéke frissítve!' : 'A hónap értéke létrehozva!');
+              // Opcionális: input reset
+              // setInputValue(undefined);
+            } else {
+              toast.error('Mentési hiba: ' + (result.error || 'Ismeretlen hiba'));
+            }
           };
+
 
           return (
             <div className="flex items-center justify-end space-x-2">
@@ -256,6 +283,8 @@ const handleSave = async (row: KPIRowData, value: number) => {
         >
           {rows.map((row: Row<TableData>) => {
             prepareRow(row);
+            // Log the full row object for debugging
+            console.log('KPITable row:', row.original);
             return (
               <tr {...row.getRowProps()} key={row.id}>
                 {row.cells.map((cell: Cell<TableData>) => {

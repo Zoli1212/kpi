@@ -3,7 +3,19 @@ import prisma from '@/lib/prisma';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const kpiData = await prisma.kPI_Data.findMany();
+    const kpiData = await prisma.kPI_Data.findMany({
+      select: {
+        id: true,
+        itemId: true,
+        value: true,
+        date: true,
+        description: true,
+        approved: true,
+        item: { select: { name: true } },
+        service: { select: { name: true } },
+        system: { select: { name: true } },
+      }
+    });
     res.status(200).json(kpiData);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch KPI data' });

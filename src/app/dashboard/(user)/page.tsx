@@ -125,6 +125,7 @@ const KPIDataPage = async () => {
       date: `${year}-${month}-${day}`, // Ensure date is a string in YYYY-MM-DD format
       monthYear,
       description: item.description || '',
+      approved: item.approved ?? false,
     };
   });
   
