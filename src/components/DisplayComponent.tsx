@@ -46,22 +46,6 @@ const DisplayComponent: React.FC<DisplayComponentProps> = ({
   const [selectedService, setSelectedService] = useState('Összes szolgáltatás')
   const [selectedSystem, setSelectedSystem] = useState('Összes rendszer')
 
-  // Reset filters when data changes
-  useEffect(() => {
-    // Set default date to the most recent date in the data
-    if (data.length > 0) {
-      const dates = data.map(item => new Date(item.date));
-      const mostRecentDate = new Date(Math.max(...dates.map(date => date.getTime())));
-      setSelectedDate(mostRecentDate);
-    } else {
-      setSelectedDate(new Date());
-    }
-    
-    setSelectedItem('Összes tétel');
-    setSelectedService('Összes szolgáltatás');
-    setSelectedSystem('Összes rendszer');
-  }, [data]);
-
   // Get unique values for filter options
   const serviceOptions = useMemo(() => 
     ['Összes szolgáltatás', ...new Set(data.map(item => item.serviceName))], 
@@ -141,47 +125,44 @@ const DisplayComponent: React.FC<DisplayComponentProps> = ({
     const selectedYear = selectedDate.getFullYear();
     const selectedMonthYear = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
 
-    const filtered = processedData.filter(record => {
-      const recordDate = parseDate(record.date);
-      const recordMonthYear = `${recordDate.getFullYear()}-${String(recordDate.getMonth() + 1).padStart(2, '0')}`;
-      const matchesMonth = recordMonthYear === selectedMonthYear;
-      const matchesItem = selectedItem === 'Összes tétel' || record.itemName === selectedItem;
-      const matchesService = selectedService === 'Összes szolgáltatás' || record.serviceName === selectedService;
-      const matchesSystem = selectedSystem === 'Összes rendszer' || record.systemName === selectedSystem;
-      return matchesMonth && matchesItem && matchesService && matchesSystem;
-    });
+    // --- ÚJ LOGIKA: Mindig jelenjen meg minden releváns itemId-re egy sor, akkor is, ha nincs adat a hónapban ---
+    let itemsToShow = Object.values(grouped).map(records => records[0]);
+    if (selectedItem !== 'Összes tétel') {
+      itemsToShow = itemsToShow.filter(row => row.itemName === selectedItem);
+    }
+    if (selectedService !== 'Összes szolgáltatás') {
+      itemsToShow = itemsToShow.filter(row => row.serviceName === selectedService);
+    }
+    if (selectedSystem !== 'Összes rendszer') {
+      itemsToShow = itemsToShow.filter(row => row.systemName === selectedSystem);
+    }
 
+    // Minden itemId-re keresd meg a hónaphoz tartozó rekordot, ha nincs, generálj 0-ás sort
+    const resultRows = itemsToShow.map(row => {
+      const record = processedData.find(record => {
+        const recordDate = parseDate(record.date);
+        const recordMonthYear = `${recordDate.getFullYear()}-${String(recordDate.getMonth() + 1).padStart(2, '0')}`;
+        return record.itemId === row.itemId && recordMonthYear === selectedMonthYear;
+      });
+      if (record) {
+        return record;
+      } else {
+        return {
+          ...row,
+          value: 0,
+          nextValue: 0,
+          date: `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`,
+          originalDate: `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`,
+          description: '',
+        };
+      }
+    });
     // Debug: listázzuk ki a sorokat
     console.log('KPI sorok:');
-    filtered.forEach(row => {
+    resultRows.forEach(row => {
       console.log(`itemId: ${row.itemId}, date: ${row.date}, value: ${row.value}, nextValue: ${row.nextValue}, itemName: ${row.itemName}, serviceName: ${row.serviceName}, systemName: ${row.systemName}`);
     });
-
-    // --- ÚJ: Ha nincs találat, jelenjen meg minden itemId-re egy 0-ás sor ---
-    if (filtered.length === 0) {
-      // Vedd az összes itemId-t, ami a filtereknek megfelel
-      let itemsToShow = Object.values(grouped).map(records => records[0]);
-      if (selectedItem !== 'Összes tétel') {
-        itemsToShow = itemsToShow.filter(row => row.itemName === selectedItem);
-      }
-      if (selectedService !== 'Összes szolgáltatás') {
-        itemsToShow = itemsToShow.filter(row => row.serviceName === selectedService);
-      }
-      if (selectedSystem !== 'Összes rendszer') {
-        itemsToShow = itemsToShow.filter(row => row.systemName === selectedSystem);
-      }
-      return itemsToShow.map(row => ({
-        ...row,
-        value: 0,
-        nextValue: 0,
-        date: `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`,
-        originalDate: `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`,
-        description: '',
-      }));
-    }
-    // --- /ÚJ ---
-
-    return filtered;
+    return resultRows;
   }, [data, selectedDate, selectedItem, selectedService, selectedSystem]);
 
   return (

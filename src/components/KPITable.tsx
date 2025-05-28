@@ -145,11 +145,15 @@ const handleSave = async (row: KPIRowData, value: number) => {
         Cell: ({ row }: { row: any }) => {
           const index = row.index;
           const originalValue = row.original.nextValue;
+          const currentValue = row.original.value;
+
+          const [inputValue, setInputValue] = React.useState<number | undefined>(originalValue);
 
           const handleInputChange = (
             e: React.ChangeEvent<HTMLInputElement>
           ) => {
             const num = parseFloat(e.target.value);
+            setInputValue(isNaN(num) ? undefined : num);
             if (!isNaN(num)) {
               nextValuesRef.current[index] = num;
             }
@@ -168,8 +172,26 @@ const handleSave = async (row: KPIRowData, value: number) => {
               <input
                 type="number"
                 defaultValue={originalValue}
+                value={inputValue === undefined ? '' : inputValue}
                 onChange={handleInputChange}
-                className="border rounded px-2 py-1 w-20 text-right focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className={
+                  `border-2 rounded px-2 py-1 w-20 text-right focus:outline-none ` +
+                  (
+                    inputValue !== undefined &&
+                    inputValue !== 0 &&
+                    currentValue !== 0 &&
+                    Math.abs((inputValue - currentValue) / currentValue) >= 0.3
+                      ? 'border-yellow-400' : 'border-gray-300'
+                  )
+                }
+                title={
+                  inputValue !== undefined &&
+                  inputValue !== 0 &&
+                  currentValue !== 0 &&
+                  Math.abs((inputValue - currentValue) / currentValue) >= 0.3
+                    ? 'Az új érték legalább 30%-kal eltér az aktuális értéktől.'
+                    : ''
+                }
               />
               {originalValue === 0 && (
                 <button
