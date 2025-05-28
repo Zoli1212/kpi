@@ -51,6 +51,8 @@ const KPIDataPage = async () => {
         where: { userId: parseInt(userId, 10) },
         select: { itemId: true }
       });
+
+      
       userItemIds = userItems.map((ui: any) => ui.itemId);
       console.log('User has access to item IDs:', userItemIds);
     } catch (error) {
