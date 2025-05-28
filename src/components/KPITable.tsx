@@ -192,15 +192,17 @@ const handleSave = async (row: KPIRowData, value: number) => {
                     ? 'Az új érték legalább 30%-kal eltér az aktuális értéktől.'
                     : ''
                 }
+                readOnly={row.original.approved === true}
+                disabled={row.original.approved === true}
               />
-              {originalValue === 0 && (
-                <button
-                  onClick={handleSaveClick}
-                  className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
-                >
-                  Mentés
-                </button>
-              )}
+              <button
+                onClick={handleSaveClick}
+                className={`px-2 py-1 text-xs rounded 
+                  ${row.original.approved === true ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+                disabled={row.original.approved === true}
+              >
+                {row.original.nextValue === 0 ? 'Mentés' : 'Módosítás'}
+              </button>
             </div>
           );
         },
