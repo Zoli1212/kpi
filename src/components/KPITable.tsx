@@ -119,8 +119,7 @@ const handleSave = async (row: KPIRowData, value: number) => {
       {
         Header: () => (
           <div className="text-center">
-            Aktuális hónap
-            <br />
+            
             {currentMonth}
           </div>
         ),
@@ -143,8 +142,7 @@ const handleSave = async (row: KPIRowData, value: number) => {
       {
         Header: () => (
           <div className="text-center">
-            Következő hónap
-            <br />
+           
             {nextMonth}
           </div>
         ),
