@@ -130,11 +130,11 @@ const handleSave = async (row: KPIRowData, value: number) => {
           <div
             className={
               "text-right font-medium " +
-              (row.original && row.original.approved === false
+              (row.original && row.original.approved === false && value !== 0
                 ? "border-2 border-red-500 rounded px-2 py-1 bg-white w-24"
                 : "px-2 py-1 w-24")
             }
-            title={row.original && row.original.approved === false ? "Ez az érték még nincs jóváhagyva." : ""}
+            title={row.original && row.original.approved === false && value !== 0 ? "Ez az érték még nincs jóváhagyva." : ""}
           >
             {formatNumber(value, true)}
           </div>
