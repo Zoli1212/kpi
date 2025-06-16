@@ -10,26 +10,27 @@ type FormState = {
 } | null;
 
 export async function authenticate(
-  prevState: FormState,
-  formData: FormData,
-): Promise<FormState> {
+  prevState: any,
+  formData: FormData
+) {
   try {
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
+    const email = formData.get('email');
+    const password = formData.get('password');
+    
+    if (!email || !password) {
+      return { message: 'Email and password are required' };
+    }
 
-    await signIn('credentials', {
-      email,
-      password,
-      redirect: false
+    await signIn('credentials', { 
+      email, 
+      password, 
+      redirect: false 
     });
-
+    
     return { message: 'success' };
   } catch (error) {
     console.error('Authentication error:', error);
-    if (error instanceof NextAuthError) {
-      return { message: 'Hibás email vagy jelszó.' };
-    }
-    return { message: 'Valami hiba történt a bejelentkezés során.' };
+    return { message: 'Invalid email or password' };
   }
 }
 

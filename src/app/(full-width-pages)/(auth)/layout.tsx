@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/context/ThemeContext";
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
+import { Toaster } from "react-hot-toast";
 
 export default function AuthLayout({
   children,
@@ -109,6 +110,7 @@ export default function AuthLayout({
             <ThemeTogglerTwo />
           </div>
         </div>
+        <Toaster position="top-center" />
       </ThemeProvider>
     </div>
   );
