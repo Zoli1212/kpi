@@ -34,13 +34,17 @@ interface DisplayComponentProps {
   systems: FilterOption[];
   services: FilterOption[];
   items: FilterOption[];
+  role?: string;
+  userId?: string;
 }
 
 const DisplayComponent: React.FC<DisplayComponentProps> = ({
   data,
   systems,
   services,
-  items
+  items,
+  role,
+  userId
 }) => {
   // State for date picker and filters
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date())
@@ -285,6 +289,8 @@ const DisplayComponent: React.FC<DisplayComponentProps> = ({
               items={items}
               currentMonth={format(selectedDate, 'yyyy. MMMM', { locale: hu })}
               nextMonth={format(addMonths(selectedDate, 1), 'yyyy. MMMM', { locale: hu })}
+              role={role}
+              userId={userId}
             />
           ) : (
             <div className="text-center py-8 text-gray-500">

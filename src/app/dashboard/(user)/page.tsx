@@ -39,6 +39,7 @@ const KPIDataPage = async () => {
   const isReporter = userRole === 'REPORTER';
   const isAdmin = userRole === 'ADMIN';
   const userId = session?.user?.id;
+  const isApprover = userRole === 'APPROVER';
 
   console.log('User role:', userRole);
   console.log('isReporter:', isReporter);
@@ -156,7 +157,9 @@ const KPIDataPage = async () => {
       data={transformedData} 
       systems={transformedSystems}
       services={transformedServices}
-      items={transformedItems}
+      items={transformedItems} 
+      role={userRole || 'VIEWER'}
+      userId={userId}
     />
   );
 };

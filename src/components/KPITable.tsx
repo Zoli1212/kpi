@@ -13,6 +13,7 @@ import {
 import { format, parseISO } from 'date-fns';
 import { hu } from 'date-fns/locale';
 import { saveKpiRow } from '@/app/actions/saveKpiRow';
+import { approveKpiRow } from '@/app/actions/approveKpiRow';
 import { toast } from 'sonner';
 
 type KPIRowData = {
@@ -39,13 +40,41 @@ interface KPITableProps {
   items: Array<{ id: number; name: string; description: string }>;
   currentMonth: string;
   nextMonth: string;
+  role?: string;
+  userId?: string;
 }
 
 const KPITable: React.FC<KPITableProps> = ({
   data,
   currentMonth,
   nextMonth,
+  role,
+  userId
 }) => {
+  // Handle KPI row approval
+  const handleApproveClick = async (row: any) => {
+    if (!userId) {
+      toast.error('Hiba: Felhasználó azonosító hiányzik');
+      return;
+    }
+
+    try {
+      const result = await approveKpiRow(row.original.id, userId);
+      
+      if (result.success) {
+        toast.success('Sikeres jóváhagyás!');
+        // Update the row's approved status in the UI
+        row.original.approved = true;
+        row.original.approvalDate = new Date().toISOString();
+        row.original.approverId = parseInt(userId, 10);
+      } else {
+        throw new Error(result.error || 'Ismeretlen hiba történt');
+      }
+    } catch (error) {
+      console.error('Error approving row:', error);
+      toast.error(`Hiba a jóváhagyás során: ${error instanceof Error ? error.message : 'Ismeretlen hiba'}`);
+    }
+  };
   if (!data || data.length === 0) {
     return (
       <div className="p-4 bg-yellow-50 border-l-4 border-yellow-400">
@@ -228,12 +257,24 @@ const handleSave = async (row: KPIRowData, value: number) => {
               >
                 {row.original.nextValue === 0 ? 'Mentés' : 'Módosítás'}
               </button>
+              {role === 'APPROVER' && (
+                <button
+                  onClick={() => handleApproveClick(row)}
+                  className={`px-2 py-1 text-xs rounded 
+                    ${row.original.approved === true ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-green-500 text-white hover:bg-green-600'}`}
+                  disabled={row.original.approved === true}
+                >
+                  {row.original.approved === true ? 'Jóváhagyva' : 'Jóváhagyás'}
+                </button>
+              )}
             </div>
           );
         },
       },
     ];
   }, [currentMonth, nextMonth]);
+
+  console.log('KPITable - User ID:', userId, 'Role:', role);
 
   const tableInstance = useTable<KPIRowData>(
     {

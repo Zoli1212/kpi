@@ -23,6 +23,7 @@ export default function SignUpForm() {
 
   useEffect(() => {
     if (state?.message === 'Sikeres regisztráció') {
+      toast.success(state.message);
       router.push('/dashboard');
     } else if (state?.message) {
       toast.error(state.message);
