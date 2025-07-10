@@ -210,16 +210,15 @@ const handleSave = async (row: KPIRowData, value: number) => {
                 >
                   {formatNumber(value, true)}
                 </div>
-                {tooltipText && (
+                {tooltipText && value !== 0 && (
                   <span className="absolute -right-2 -top-2 w-4 h-4 bg-blue-500 rounded-full text-white text-xs flex items-center justify-center cursor-help opacity-0 group-hover:opacity-100 transition-opacity">
                     i
                   </span>
                 )}
               </div>
-              {tooltipText && (
+              {tooltipText && value !== 0 && (
                 <div className="absolute z-10 hidden group-hover:block w-64 p-2 mt-1 text-sm text-left text-gray-700 bg-white border border-gray-200 rounded shadow-lg left-0 top-full">
                   {userInfo && <div className="font-medium">{userInfo}</div>}
-                  {approvalInfo && <div className="mt-1 pt-1 border-t border-gray-100">{approvalInfo.trim()}</div>}
                 </div>
               )}
             </div>
@@ -279,11 +278,16 @@ const handleSave = async (row: KPIRowData, value: number) => {
           };
 
 
+          // User info for the next month's value (using the original user)
+          const nextMonthUserInfo = row.original.user ? 
+            `Felvitte: ${row.original.user.name} (${row.original.user.email})` : '';
+
           return (
-            <div className="flex items-center justify-end space-x-2">
-              <input
-                type="number"
-                defaultValue={originalValue}
+            <div className="relative group flex items-center justify-end space-x-2">
+              <div className="relative">
+                <input
+                  type="number"
+                  defaultValue={originalValue}
                 value={inputValue === undefined ? '' : inputValue}
                 onChange={handleInputChange}
                 className={
@@ -304,9 +308,20 @@ const handleSave = async (row: KPIRowData, value: number) => {
                     ? 'Az új érték legalább 30%-kal eltér az aktuális értéktől.'
                     : ''
                 }
-                readOnly={row.original.approved === true}
-                disabled={row.original.approved === true}
-              />
+                  readOnly={row.original.approved === true}
+                  disabled={row.original.approved === true}
+                />
+                {nextMonthUserInfo && originalValue !== 0 && (
+                  <span className="absolute -right-2 -top-2 w-4 h-4 bg-blue-500 rounded-full text-white text-xs flex items-center justify-center cursor-help opacity-0 group-hover:opacity-100 transition-opacity">
+                    i
+                  </span>
+                )}
+              </div>
+              {nextMonthUserInfo && originalValue !== 0 && (
+                <div className="absolute z-10 hidden group-hover:block w-64 p-2 mt-1 text-sm text-left text-gray-700 bg-white border border-gray-200 rounded shadow-lg right-0 top-full">
+                  <div className="font-medium">{nextMonthUserInfo}</div>
+                </div>
+              )}
               <button
                 onClick={handleSaveClick}
                 className={`px-2 py-1 text-xs rounded 

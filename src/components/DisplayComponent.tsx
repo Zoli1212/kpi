@@ -287,8 +287,8 @@ const DisplayComponent: React.FC<DisplayComponentProps> = ({
               systems={systems}
               services={services}
               items={items}
-              currentMonth={format(selectedDate, 'yyyy. MMMM', { locale: hu })}
-              nextMonth={format(addMonths(selectedDate, 1), 'yyyy. MMMM', { locale: hu })}
+              currentMonth={format(addMonths(selectedDate, -1), 'yyyy. MMMM', { locale: hu })}
+              nextMonth={format(selectedDate, 'yyyy. MMMM', { locale: hu })}
               role={role}
               userId={userId}
             />
