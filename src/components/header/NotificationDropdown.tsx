@@ -10,7 +10,7 @@ export default function NotificationDropdown() {
   const [notifying, setNotifying] = useState(true);
 
   function toggleDropdown() {
-    setIsOpen(!isOpen);
+    // setIsOpen(!isOpen);
   }
 
   function closeDropdown() {

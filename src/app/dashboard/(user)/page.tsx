@@ -78,6 +78,20 @@ const KPIDataPage = async () => {
         item: true,
         service: true,
         system: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        approver: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
       },
       orderBy: {
         date: 'desc',
@@ -127,6 +141,17 @@ const KPIDataPage = async () => {
       monthYear,
       description: item.description || '',
       approved: item.approved ?? false,
+      created: item.createdAt || item.created || new Date().toISOString(),
+      user: item.user ? {
+        id: item.user.id,
+        name: item.user.name || 'Ismeretlen',
+        email: item.user.email || ''
+      } : undefined,
+      approver: item.approver ? {
+        id: item.approver.id,
+        name: item.approver.name || 'Ismeretlen',
+        email: item.approver.email || ''
+      } : undefined
     };
   });
   

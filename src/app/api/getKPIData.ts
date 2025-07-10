@@ -9,11 +9,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         itemId: true,
         value: true,
         date: true,
-        description: true,
         approved: true,
+        created: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        approver: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
         item: { select: { name: true } },
         service: { select: { name: true } },
         system: { select: { name: true } },
+      },
+      orderBy: {
+        created: 'desc'
       }
     });
     res.status(200).json(kpiData);

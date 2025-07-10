@@ -24,17 +24,18 @@ export default function UserLayout({
   return (
     <div className="min-h-screen xl:flex">
       {/* Sidebar and Backdrop */}
-      <UserSidebar />
+      {/* <UserSidebar /> */}
       <Backdrop />
       {/* Main Content Area */}
-      <div
+      {/* <div
         className={`flex-1 transition-all  duration-300 ease-in-out ${mainContentMargin}`}
-      >
+      > */}
         {/* Header */}
+        <div className="flex-1 transition-all  duration-300 ease-in-out">
         <AppHeader />
         {/* Page Content */}
         <div className="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">{children}</div>
       </div>
-    </div>
+    // </div>
   );
 }

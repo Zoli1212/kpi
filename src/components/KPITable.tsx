@@ -27,6 +27,20 @@ type KPIRowData = {
   date: string;
   originalDate?: string;
   description?: string;
+  created: string;
+  approved?: boolean;
+  approvalDate?: string;
+  approverId?: number;
+  user?: {
+    id: number;
+    name: string;
+    email: string;
+  };
+  approver?: {
+    id: number;
+    name: string;
+    email: string;
+  };
 };
 
 type TableData = KPIRowData & {
@@ -52,21 +66,26 @@ const KPITable: React.FC<KPITableProps> = ({
   userId
 }) => {
   // Handle KPI row approval
-  const handleApproveClick = async (row: any) => {
+  const handleApproveClick = async (row: { original: KPIRowData }) => {
     if (!userId) {
       toast.error('Hiba: Felhasználó azonosító hiányzik');
       return;
     }
 
     try {
-      const result = await approveKpiRow(row.original.id, userId);
+      const approverId = parseInt(userId, 10);
+      if (isNaN(approverId)) {
+        throw new Error('Érvénytelen felhasználói azonosító');
+      }
+      
+      const result = await approveKpiRow(row.original.id, approverId.toString());
       
       if (result.success) {
         toast.success('Sikeres jóváhagyás!');
         // Update the row's approved status in the UI
         row.original.approved = true;
         row.original.approvalDate = new Date().toISOString();
-        row.original.approverId = parseInt(userId, 10);
+        row.original.approverId = approverId;
       } else {
         throw new Error(result.error || 'Ismeretlen hiba történt');
       }
@@ -95,15 +114,31 @@ const KPITable: React.FC<KPITableProps> = ({
   };
 
   const tableData = useMemo<KPIRowData[]>(() => {
-    return data.map((item, index) => ({
-      ...item,
-      id: item.id || index,
-      itemId: item.itemId || 0,
-      value: item.value ?? 0,
-      nextValue: item.nextValue ?? 0,
-      date: item.date || new Date().toISOString(),
-      originalDate: item.originalDate || item.date,
-    }));
+    console.log('Raw data received in KPITable:', data);
+    const processedData = data.map((item, index) => {
+      console.log(`Item ${index}:`, {
+        id: item.id,
+        user: item.user,
+        approver: item.approver,
+        approved: item.approved
+      });
+      
+      return {
+        ...item,
+        id: item.id || index,
+        itemId: item.itemId || 0,
+        value: item.value ?? 0,
+        nextValue: item.nextValue ?? 0,
+        date: item.date || new Date().toISOString(),
+        originalDate: item.originalDate || item.date,
+        created: item.created || new Date().toISOString(),
+        user: item.user,
+        approver: item.approver,
+      };
+    });
+    
+    console.log('Processed table data:', processedData);
+    return processedData;
   }, [data]);
 
   const nextValuesRef = useRef<Record<number, number>>({});
@@ -133,7 +168,7 @@ const handleSave = async (row: KPIRowData, value: number) => {
         Header: 'Tétel',
         accessor: 'itemName',
         id: 'itemName',
-        Cell: ({ value }) => <div className="font-medium">{value}</div>,
+        Cell: ({ value }: { value: string }) => <div className="font-medium">{value}</div>,
       },
       {
         Header: 'Szolgáltatás',
@@ -148,25 +183,48 @@ const handleSave = async (row: KPIRowData, value: number) => {
       {
         Header: () => (
           <div className="text-center">
-            
             {currentMonth}
           </div>
         ),
         accessor: 'value',
         id: 'value',
-        Cell: ({ row, value }: { row: any, value: number }) => (
-          <div
-            className={
-              "text-right font-medium " +
-              (row.original && row.original.approved === false && value !== 0
-                ? "border border-red-400 rounded px-2 py-1 bg-white w-24"
-                : "px-2 py-1 w-24")
-            }
-            title={row.original && row.original.approved === false && value !== 0 ? "Ez az érték még nincs jóváhagyva." : ""}
-          >
-            {formatNumber(value, true)}
-          </div>
-        ),
+        Cell: ({ row, value }: { row: { original: KPIRowData }, value: number }) => {
+          const userInfo = row.original?.user 
+            ? `Felvitte: ${row.original.user.name} (${row.original.user.email})` 
+            : '';
+          const approvalInfo = row.original?.approved && row.original?.approver
+            ? `\nJóváhagyta: ${row.original.approver.name} (${row.original.approver.email})`
+            : '';
+          const tooltipText = `${userInfo}${approvalInfo}`.trim();
+          
+          return (
+            <div className="relative group inline-block w-full">
+              <div className="relative">
+                <div
+                  className={
+                    "text-right font-medium inline-block " +
+                    (row.original && row.original.approved === false && value !== 0
+                      ? "border border-red-400 rounded px-2 py-1 bg-white w-24"
+                      : "px-2 py-1 w-24")
+                  }
+                >
+                  {formatNumber(value, true)}
+                </div>
+                {tooltipText && (
+                  <span className="absolute -right-2 -top-2 w-4 h-4 bg-blue-500 rounded-full text-white text-xs flex items-center justify-center cursor-help opacity-0 group-hover:opacity-100 transition-opacity">
+                    i
+                  </span>
+                )}
+              </div>
+              {tooltipText && (
+                <div className="absolute z-10 hidden group-hover:block w-64 p-2 mt-1 text-sm text-left text-gray-700 bg-white border border-gray-200 rounded shadow-lg left-0 top-full">
+                  {userInfo && <div className="font-medium">{userInfo}</div>}
+                  {approvalInfo && <div className="mt-1 pt-1 border-t border-gray-100">{approvalInfo.trim()}</div>}
+                </div>
+              )}
+            </div>
+          );
+        },
       },
       {
         Header: () => (
@@ -177,7 +235,7 @@ const handleSave = async (row: KPIRowData, value: number) => {
         ),
         id: 'nextValue',
         accessor: 'nextValue',
-        Cell: ({ row }: { row: any }) => {
+        Cell: ({ row }: { row: { original: KPIRowData & { nextId?: number }, index: number } }) => {
           const index = row.index;
           const originalValue = row.original.nextValue;
           const currentValue = row.original.value;
