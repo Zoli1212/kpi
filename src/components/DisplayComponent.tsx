@@ -132,9 +132,12 @@ const DisplayComponent: React.FC<DisplayComponentProps> = ({
     // Debug: nézd meg, hogy processedData-ban helyes-e a nextValue!
     console.log('DEBUG processedData:', processedData);
 
-    // Ezután szűröm a processedData-t a kiválasztott hónapra és filterekre
-    const selectedMonth = selectedDate.getMonth() + 1;
-    const selectedYear = selectedDate.getFullYear();
+    // Adjust the selected date to use the previous month for data display
+    const previousMonthDate = new Date(selectedDate);
+    previousMonthDate.setMonth(previousMonthDate.getMonth() - 1);
+    
+    const selectedMonth = previousMonthDate.getMonth() + 1;
+    const selectedYear = previousMonthDate.getFullYear();
     const selectedMonthYear = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
 
     // --- ÚJ LOGIKA: Mindig jelenjen meg minden releváns itemId-re egy sor, akkor is, ha nincs adat a hónapban ---
@@ -287,7 +290,7 @@ const DisplayComponent: React.FC<DisplayComponentProps> = ({
               systems={systems}
               services={services}
               items={items}
-              currentMonth={format(addMonths(selectedDate, -1), 'yyyy. MMMM', { locale: hu })}
+              currentMonth={format(new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, 1), 'yyyy. MMMM', { locale: hu })}
               nextMonth={format(selectedDate, 'yyyy. MMMM', { locale: hu })}
               role={role}
               userId={userId}
