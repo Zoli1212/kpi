@@ -171,6 +171,10 @@ const KPITable: React.FC<KPITableProps> = ({
 
           const isApproved = row.original.nextApproved;
 
+          const previousValue = row.original.value;
+          const nextValueNumeric = parseFloat(currentValue) || 0;
+          const isSignificantIncrease = !isApproved && previousValue !== 0 && nextValueNumeric > previousValue * 1.3;
+
           return (
             <div className="flex items-center space-x-2">
                <input
@@ -178,7 +182,13 @@ const KPITable: React.FC<KPITableProps> = ({
                 value={currentValue}
                 onChange={(e) => setCurrentValue(e.target.value)}
                 readOnly={isApproved}
-                className={`border-2 rounded px-2 py-1 w-24 text-right focus:outline-none ${isApproved ? 'bg-gray-200' : 'border-gray-300'}`}
+                className={`border-2 rounded px-2 py-1 w-24 text-right focus:outline-none ${
+                  isApproved 
+                    ? 'bg-gray-200 border-gray-300' 
+                    : isSignificantIncrease 
+                    ? 'border-yellow-400' 
+                    : 'border-gray-300'
+                }`}
               />
               <button
                 onClick={handleSaveClick}
