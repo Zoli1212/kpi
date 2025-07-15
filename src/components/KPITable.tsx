@@ -77,7 +77,10 @@ const KPITable: React.FC<KPITableProps> = ({
       if (isNaN(approverId)) {
         throw new Error('Érvénytelen felhasználói azonosító');
       }
-      const result = await approveKpiRow(row.original.id, approverId.toString());
+      if (!row.original.nextId) {
+        throw new Error('Nincs mit jóváhagyni, hiányzó adat ID.');
+      }
+      const result = await approveKpiRow(row.original.nextId, approverId.toString());
       if (result.success) {
         toast.success('Sikeres jóváhagyás!');
         row.original.approved = true;
@@ -132,22 +135,34 @@ const KPITable: React.FC<KPITableProps> = ({
         id: 'nextValue',
         Cell: ({ row }: { row: { original: KPIRowData } }) => {
           const [currentValue, setCurrentValue] = React.useState(row.original.nextValue?.toString() || '');
+          const isApproved = row.original.nextApproved;
+
+          return (
+            <input
+              type="number"
+              value={currentValue}
+              onChange={(e) => setCurrentValue(e.target.value)}
+              readOnly={isApproved}
+              className={`border-2 rounded px-2 py-1 w-24 text-right focus:outline-none ${isApproved ? 'bg-gray-200' : 'border-gray-300'}`}
+            />
+          );
+        },
+      },
+      {
+        Header: 'Műveletek',
+        id: 'actions',
+        Cell: ({ row }: { row: { original: KPIRowData } }) => {
+          const [currentValue, setCurrentValue] = React.useState(row.original.nextValue?.toString() || '');
 
           const handleSaveClick = async () => {
             if (!userId) {
               toast.error('Hiba: Nincs bejelentkezett felhasználó.');
               return;
             }
-            
+
             const [yearStr, monthName] = nextMonth.split('. ');
-
-            const hungarianMonths = Array.from({ length: 12 }, (_, i) => 
-              hu.localize.month(i as Month, { width: 'wide' })
-            );
-
-            const monthIndex = hungarianMonths.findIndex(
-              (m: string) => m.toLowerCase() === monthName.trim().toLowerCase()
-            );
+            const hungarianMonths = Array.from({ length: 12 }, (_, i) => hu.localize.month(i as Month, { width: 'wide' }));
+            const monthIndex = hungarianMonths.findIndex(m => m.toLowerCase() === monthName.trim().toLowerCase());
 
             if (monthIndex === -1) {
               toast.error('Hiba: Érvénytelen hónapnév.');
@@ -175,14 +190,7 @@ const KPITable: React.FC<KPITableProps> = ({
           const isApproved = row.original.nextApproved;
 
           return (
-            <div className="flex items-center justify-end space-x-2">
-              <input
-                type="number"
-                value={currentValue}
-                onChange={(e) => setCurrentValue(e.target.value)}
-                readOnly={isApproved}
-                className={`border-2 rounded px-2 py-1 w-24 text-right focus:outline-none ${isApproved ? 'bg-gray-200' : 'border-gray-300'}`}
-              />
+            <div className="flex items-center space-x-2">
               <button
                 onClick={handleSaveClick}
                 disabled={isApproved}
@@ -190,6 +198,15 @@ const KPITable: React.FC<KPITableProps> = ({
               >
                 {row.original.nextId ? 'Módosítás' : 'Mentés'}
               </button>
+              {role === 'APPROVER' && (
+                <button
+                  onClick={() => handleApproveClick(row)}
+                  disabled={isApproved || !row.original.nextId}
+                  className={`px-3 py-1 text-xs rounded ${(isApproved || !row.original.nextId) ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-500 text-white hover:bg-green-600'}`}
+                >
+                  Jóváhagyás
+                </button>
+              )}
             </div>
           );
         },
