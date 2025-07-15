@@ -127,32 +127,14 @@ const KPITable: React.FC<KPITableProps> = ({
         Header: currentMonth,
         accessor: 'value',
         Cell: ({ value }: { value: number; }) => (
-          <div className="text-right">{formatNumber(value)}</div>
+          <div className="text-left">{formatNumber(value)}</div>
         ),
       },
       {
         Header: nextMonth,
-        id: 'nextValue',
-        Cell: ({ row }: { row: { original: KPIRowData } }) => {
-          const [currentValue, setCurrentValue] = React.useState(row.original.nextValue?.toString() || '');
-          const isApproved = row.original.nextApproved;
-
-          return (
-            <input
-              type="number"
-              value={currentValue}
-              onChange={(e) => setCurrentValue(e.target.value)}
-              readOnly={isApproved}
-              className={`border-2 rounded px-2 py-1 w-24 text-right focus:outline-none ${isApproved ? 'bg-gray-200' : 'border-gray-300'}`}
-            />
-          );
-        },
-      },
-      {
-        Header: 'Műveletek',
         id: 'actions',
         Cell: ({ row }: { row: { original: KPIRowData } }) => {
-          const [currentValue, setCurrentValue] = React.useState(row.original.nextValue?.toString() || '');
+          const [currentValue, setCurrentValue] = React.useState(row.original.nextValue?.toString() || '0');
 
           const handleSaveClick = async () => {
             if (!userId) {
@@ -191,6 +173,13 @@ const KPITable: React.FC<KPITableProps> = ({
 
           return (
             <div className="flex items-center space-x-2">
+               <input
+                type="number"
+                value={currentValue}
+                onChange={(e) => setCurrentValue(e.target.value)}
+                readOnly={isApproved}
+                className={`border-2 rounded px-2 py-1 w-24 text-right focus:outline-none ${isApproved ? 'bg-gray-200' : 'border-gray-300'}`}
+              />
               <button
                 onClick={handleSaveClick}
                 disabled={isApproved}
