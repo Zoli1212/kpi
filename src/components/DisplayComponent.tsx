@@ -21,6 +21,7 @@ interface TableData {
   approved?: boolean;
   nextApproved?: boolean;
   nextId?: number;
+  created: string; // Added to match the actual data structure
 }
 
 interface FilterOption {
@@ -106,84 +107,67 @@ const DisplayComponent: React.FC<DisplayComponentProps> = ({
       return [];
     }
 
-    // User által kért egyszerű logika: minden itemId-re külön sort + nextValue
-    const grouped = data.reduce((acc, rec) => {
-      if (!acc[rec.itemId]) acc[rec.itemId] = [];
-      acc[rec.itemId].push({ ...rec });
+    const currentMonthStart = startOfMonth(addMonths(selectedDate, -1));
+    const nextMonthStart = startOfMonth(selectedDate);
+
+    const groupedByItem = data.reduce((acc, record) => {
+      const key = record.itemId;
+      if (!acc[key]) {
+        acc[key] = [];
+      }
+      acc[key].push(record);
       return acc;
-    }, {} as Record<string, any[]>);
+    }, {} as Record<string, TableData[]>);
 
-    const processedData: any[] = [];
-    Object.values(grouped).forEach(records => {
-      // Mindig Date objektummal hasonlíts!
-      const sorted = [...records].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-      for (let i = 0; i < sorted.length - 1; i++) {
-        sorted[i].nextValue = sorted[i + 1].value;
-        sorted[i].nextApproved = sorted[i + 1].approved;
-        sorted[i].nextId = sorted[i + 1].id;
-      }
-      if (sorted.length) {
-        sorted[sorted.length - 1].nextValue = 0;
-        sorted[sorted.length - 1].nextApproved = undefined;
-        sorted[sorted.length - 1].nextId = undefined;
-      }
-      processedData.push(...sorted);
-    });
-    // Debug: nézd meg, hogy processedData-ban helyes-e a nextValue!
-    console.log('DEBUG processedData:', processedData);
+    let allItems = Object.values(groupedByItem).map(records => records[0]);
 
-    // Adjust the selected date to use the previous month for data display
-    const previousMonthDate = new Date(selectedDate);
-    previousMonthDate.setMonth(previousMonthDate.getMonth() - 1);
-    
-    const selectedMonth = previousMonthDate.getMonth() + 1;
-    const selectedYear = previousMonthDate.getFullYear();
-    const selectedMonthYear = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
-
-    // --- ÚJ LOGIKA: Mindig jelenjen meg minden releváns itemId-re egy sor, akkor is, ha nincs adat a hónapban ---
-    let itemsToShow = Object.values(grouped).map(records => records[0]);
     if (selectedItem !== 'Összes tétel') {
-      itemsToShow = itemsToShow.filter(row => row.itemName === selectedItem);
+      allItems = allItems.filter(item => item.itemName === selectedItem);
     }
     if (selectedService !== 'Összes szolgáltatás') {
-      itemsToShow = itemsToShow.filter(row => row.serviceName === selectedService);
+      allItems = allItems.filter(item => item.serviceName === selectedService);
     }
     if (selectedSystem !== 'Összes rendszer') {
-      itemsToShow = itemsToShow.filter(row => row.systemName === selectedSystem);
+      allItems = allItems.filter(item => item.systemName === selectedSystem);
     }
 
-    // Minden itemId-re keresd meg a hónaphoz tartozó rekordot, ha nincs, generálj 0-ás sort
-    const resultRows = itemsToShow.map(row => {
-      const record = processedData.find(record => {
-        const recordDate = parseDate(record.date);
-        const recordMonthYear = `${recordDate.getFullYear()}-${String(recordDate.getMonth() + 1).padStart(2, '0')}`;
-        return record.itemId === row.itemId && recordMonthYear === selectedMonthYear;
+    const finalData: TableData[] = allItems.map(baseItem => {
+      const recordsForItem = groupedByItem[baseItem.itemId] || [];
+
+      const currentMonthRecord = recordsForItem.find(r => {
+        const recordDate = startOfMonth(parseDate(r.date));
+        return recordDate.getTime() === currentMonthStart.getTime();
       });
-      if (record) {
-        return record;
+
+      const nextMonthRecord = recordsForItem.find(r => {
+        const recordDate = startOfMonth(parseDate(r.date));
+        return recordDate.getTime() === nextMonthStart.getTime();
+      });
+
+      if (currentMonthRecord) {
+        return {
+          ...currentMonthRecord,
+          nextValue: nextMonthRecord ? nextMonthRecord.value : 0,
+          nextApproved: nextMonthRecord ? nextMonthRecord.approved : false,
+          nextId: nextMonthRecord ? nextMonthRecord.id : undefined,
+        };
       } else {
         return {
-          ...row,
+          ...baseItem,
+          id: -baseItem.itemId,
+          date: format(currentMonthStart, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
           value: 0,
-          nextValue: 0,
-          date: `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`,
-          originalDate: `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`,
-          description: '',
           approved: false,
-          nextApproved: undefined,
-          nextId: undefined,
+          nextValue: nextMonthRecord ? nextMonthRecord.value : 0,
+          nextApproved: nextMonthRecord ? nextMonthRecord.approved : false,
+          nextId: nextMonthRecord ? nextMonthRecord.id : undefined,
+          created: new Date().toISOString(), // Provide string value for 'created'
         };
       }
     });
-    // Debug: listázzuk ki a sorokat
-    console.log('KPI sorok:');
-    resultRows.forEach(row => {
-      console.log(`itemId: ${row.itemId}, date: ${row.date}, value: ${row.value}, nextValue: ${row.nextValue}, itemName: ${row.itemName}, serviceName: ${row.serviceName}, systemName: ${row.systemName}, approved: ${row.approved}, nextApproved: ${row.nextApproved}`);
-    });
-    // Extra: log the whole array for easy inspection
-    console.log('DEBUG resultRows (full objects):', resultRows);
-    return resultRows;
-  }, [data, selectedDate, selectedItem, selectedService, selectedSystem]);
+
+    return finalData;
+  }, [selectedDate, selectedItem, selectedService, selectedSystem, data]);
 
   return (
     <div className="p-4">
@@ -290,7 +274,7 @@ const DisplayComponent: React.FC<DisplayComponentProps> = ({
               systems={systems}
               services={services}
               items={items}
-              currentMonth={format(new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, 1), 'yyyy. MMMM', { locale: hu })}
+              currentMonth={format(addMonths(selectedDate, -1), 'yyyy. MMMM', { locale: hu })}
               nextMonth={format(selectedDate, 'yyyy. MMMM', { locale: hu })}
               role={role}
               userId={userId}
