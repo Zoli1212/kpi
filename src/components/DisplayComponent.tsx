@@ -184,7 +184,7 @@ const DisplayComponent: React.FC<DisplayComponentProps> = ({
               onChange={(e) => setSelectedItem(e.target.value)}
               className="mt-1 block w-full pl-3 pr-10 py-2 text-sm border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md"
             >
-              {itemOptions.map((option, index) => (
+              {[...itemOptions].sort().map((option, index) => (
                 <option key={index} value={option}>
                   {option}
                 </option>
@@ -199,11 +199,11 @@ const DisplayComponent: React.FC<DisplayComponentProps> = ({
               onChange={(e) => setSelectedService(e.target.value)}
               className="mt-1 block w-full pl-3 pr-10 py-2 text-sm border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md"
             >
-              {serviceOptions.map((option, index) => (
-                <option key={index} value={option}>
-                  {option}
-                </option>
-              ))}
+              {serviceOptions.slice().sort().map((option, index) => (
+  <option key={index} value={option}>
+    {option}
+  </option>
+))}
             </select>
           </div>
           
@@ -214,7 +214,7 @@ const DisplayComponent: React.FC<DisplayComponentProps> = ({
               onChange={(e) => setSelectedSystem(e.target.value)}
               className="mt-1 block w-full pl-3 pr-10 py-2 text-sm border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md"
             >
-              {systemOptions.map((option, index) => (
+              {systemOptions.slice().sort().map((option, index) => (
                 <option key={index} value={option}>
                   {option}
                 </option>
