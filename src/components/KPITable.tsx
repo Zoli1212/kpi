@@ -136,6 +136,11 @@ const KPITable: React.FC<KPITableProps> = ({
         Cell: ({ row }: { row: { original: KPIRowData } }) => {
           const [currentValue, setCurrentValue] = React.useState(row.original.nextValue?.toString() || '0');
 
+// Synchronize currentValue with nextValue prop
+React.useEffect(() => {
+  setCurrentValue(row.original.nextValue?.toString() || '0');
+}, [row.original.nextValue]);
+
           const handleSaveClick = async () => {
             if (!userId) {
               toast.error('Hiba: Nincs bejelentkezett felhasználó.');

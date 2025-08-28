@@ -18,6 +18,7 @@ model User {
   modified               DateTime    @updatedAt
   expired                DateTime?
   role                   Role @default(REPORTER)
+  incidentsReporter       Boolean @default(false)
   
   // Relations
   userRights             UserRight[]
@@ -106,7 +107,6 @@ model Service {
   created     DateTime    @default(now())
   modified    DateTime    @updatedAt
   expired     DateTime?
-
   kpiData     KPI_Data[]
   relations   Relation[]
   items       Item[]      @relation("ServiceToItems")
@@ -164,6 +164,7 @@ model Company {
   created     DateTime    @default(now())
   modified    DateTime    @updatedAt
   expired     DateTime?
+  incidentsReportable Boolean @default(true)
   
   // Relations
   kpiData     KPI_Data[]
@@ -200,6 +201,7 @@ model System {
   applicationOperatorId  Int?
   platformOperatorId     Int?
   infrastructureOperatorId Int?
+  incidentsReportable Boolean @default(true)
   companyId              Int
   serviceId              Int?
   created                DateTime    @default(now())

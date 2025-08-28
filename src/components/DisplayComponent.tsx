@@ -60,15 +60,35 @@ const DisplayComponent: React.FC<DisplayComponentProps> = ({
     [data]
   );
   
-  const itemOptions = useMemo(() => 
-    ['Összes tétel', ...new Set(data.map(item => item.itemName))], 
-    [data]
-  );
-  
-  const systemOptions = useMemo(() => 
-    ['Összes rendszer', ...new Set(data.map(item => item.systemName))], 
-    [data]
-  );
+  // Only selectedService affects the other two filters
+  const filteredItemOptions = useMemo(() => {
+    if (selectedService === 'Összes szolgáltatás') {
+      return ['Összes tétel', ...new Set(data.map(item => item.itemName))];
+    }
+    // Find all itemNames where serviceName matches selectedService
+    return [
+      'Összes tétel',
+      ...new Set(
+        data.filter(item => item.serviceName === selectedService)
+            .map(item => item.itemName)
+      )
+    ];
+  }, [data, selectedService]);
+
+  const filteredSystemOptions = useMemo(() => {
+    if (selectedService === 'Összes szolgáltatás') {
+      return ['Összes rendszer', ...new Set(data.map(item => item.systemName))];
+    }
+    // Find all systemNames where serviceName matches selectedService
+    return [
+      'Összes rendszer',
+      ...new Set(
+        data.filter(item => item.serviceName === selectedService)
+            .map(item => item.systemName)
+      )
+    ];
+  }, [data, selectedService]);
+
 
   // Format date for display
   const formatDate = (date: Date | null) => {
@@ -184,11 +204,11 @@ const DisplayComponent: React.FC<DisplayComponentProps> = ({
               onChange={(e) => setSelectedItem(e.target.value)}
               className="mt-1 block w-full pl-3 pr-10 py-2 text-sm border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md"
             >
-              {[...itemOptions].sort().map((option, index) => (
+              {[...filteredItemOptions].sort().map((option, index) => (
                 <option key={index} value={option}>
                   {option}
                 </option>
-              ))}
+              ))} 
             </select>
           </div>
           
@@ -196,7 +216,14 @@ const DisplayComponent: React.FC<DisplayComponentProps> = ({
             <label className="block text-sm font-medium text-gray-700 mb-1">Szolgáltatás</label>
             <select
               value={selectedService}
-              onChange={(e) => setSelectedService(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                setSelectedService(value);
+                if (value === 'Összes szolgáltatás') {
+                  setSelectedItem('Összes tétel');
+                  setSelectedSystem('Összes rendszer');
+                }
+              }}
               className="mt-1 block w-full pl-3 pr-10 py-2 text-sm border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md"
             >
               {serviceOptions.slice().sort().map((option, index) => (
@@ -214,7 +241,7 @@ const DisplayComponent: React.FC<DisplayComponentProps> = ({
               onChange={(e) => setSelectedSystem(e.target.value)}
               className="mt-1 block w-full pl-3 pr-10 py-2 text-sm border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md"
             >
-              {systemOptions.slice().sort().map((option, index) => (
+              {filteredSystemOptions.slice().sort().map((option, index) => (
                 <option key={index} value={option}>
                   {option}
                 </option>
