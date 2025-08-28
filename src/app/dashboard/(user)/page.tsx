@@ -2,6 +2,8 @@ import React from 'react';
 import { auth } from '@/auth';
 import DisplayComponent from '@/components/DisplayComponent';
 import prisma from '@/lib/prisma';
+import Link from 'next/link';
+import Button from '@/components/ui/button/Button';
 
 
 type UserItem = {
@@ -35,7 +37,8 @@ const KPIDataPage = async () => {
   console.log(session, 'SESSION')
   
   // Force REPORTER role for testing
-  const userRole = session?.user?.role;
+    const userRole = session?.user?.role;
+  const incidentsReporter = session?.user?.incidentsReporter;
   const isReporter = userRole === 'REPORTER';
   const isAdmin = userRole === 'ADMIN';
   const userId = session?.user?.id;
@@ -177,15 +180,24 @@ const KPIDataPage = async () => {
     description: item.description || '',
   }));
 
-  return (
-    <DisplayComponent
-      data={transformedData} 
-      systems={transformedSystems}
-      services={transformedServices}
-      items={transformedItems} 
-      role={userRole || 'VIEWER'}
-      userId={userId}
-    />
+    return (
+    <div>
+      {incidentsReporter && (
+        <div className="mb-4 flex justify-end">
+          <Link href="/dashboard/incidents">
+            <Button>Incident Management</Button>
+          </Link>
+        </div>
+      )}
+      <DisplayComponent
+        data={transformedData}
+        systems={transformedSystems}
+        services={transformedServices}
+        items={transformedItems}
+        role={userRole || 'VIEWER'}
+        userId={userId}
+      />
+    </div>
   );
 };
 

@@ -8,11 +8,13 @@ declare module 'next-auth' {
     user: {
       id: string;
       role: string;
+      incidentsReporter: boolean;
     } & DefaultSession['user']
   }
   
   interface User {
     role: string;
+    incidentsReporter: boolean;
   }
 }
 
@@ -22,10 +24,12 @@ export const authConfig: NextAuthConfig = {
     error: '/error',
   },
   callbacks: {
-    jwt({ token, user, account, profile }) {
+        jwt({ token, user, account, profile }) {
       if (user) {
-        token.role = (user as User & { role: string }).role || 'REPORTER';
-        token.email = user.email;
+        const dbUser = user as any;
+        token.role = dbUser.role || 'REPORTER';
+        token.email = dbUser.email;
+        token.incidentsReporter = dbUser.incidentsReporter;
       }
       return token;
     },
@@ -38,6 +42,9 @@ export const authConfig: NextAuthConfig = {
       }
       if (token.email) {
         session.user.email = token.email as string;
+      }
+      if (token.incidentsReporter !== undefined) {
+        (session.user as any).incidentsReporter = token.incidentsReporter;
       }
       return session;
     },
@@ -80,6 +87,7 @@ export const authConfig: NextAuthConfig = {
           email: user.email,
           name: user.name,
           role: user.role || 'REPORTER',
+          incidentsReporter: user.incidentsReporter ?? false,
         } as User;
       },
     }),
