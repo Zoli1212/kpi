@@ -23,14 +23,15 @@ interface IncidentsDataTableProps {
 
 export function IncidentsDataTable({ data }: IncidentsDataTableProps) {
   const router = useRouter();
-  const [sortConfig, setSortConfig] = React.useState<{ key: keyof IncidentWithRelations, direction: 'ascending' | 'descending' } | null>(null);
+  const [sortConfig, setSortConfig] = React.useState<{ key: keyof IncidentWithRelations; direction: 'ascending' | 'descending' } | null>(null);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [selectedIncidentId, setSelectedIncidentId] = React.useState<number | null>(null);
 
+
   const sortedData = React.useMemo(() => {
-    let sortableData = [...data];
+    let sortableItems = [...data];
     if (sortConfig !== null) {
-      sortableData.sort((a, b) => {
+      sortableItems.sort((a, b) => {
         const aValue = a[sortConfig.key];
         const bValue = b[sortConfig.key];
 
@@ -47,7 +48,7 @@ export function IncidentsDataTable({ data }: IncidentsDataTableProps) {
         return 0;
       });
     }
-    return sortableData;
+    return sortableItems;
   }, [data, sortConfig]);
 
   const requestSort = (key: keyof IncidentWithRelations) => {
@@ -63,12 +64,17 @@ export function IncidentsDataTable({ data }: IncidentsDataTableProps) {
     setIsModalOpen(true);
   };
 
-    const handleCloseClick = async (incidentId: number) => {
+  const handleCloseClick = async (incidentId: number) => {
     const promise = closeIncidentAction(incidentId);
 
     toast.promise(promise, {
       loading: 'Closing incident...',
-      success: (data) => data.message,
+      success: (data) => {
+        if (data.success) {
+          router.refresh();
+        }
+        return data.message;
+      },
       error: (err) => err.message || 'An unexpected error occurred.',
     });
   };
@@ -81,6 +87,9 @@ export function IncidentsDataTable({ data }: IncidentsDataTableProps) {
     toast.promise(promise, {
       loading: 'Deleting incident...',
       success: (data) => {
+        if (data.success) {
+          router.refresh();
+        }
         setIsModalOpen(false);
         setSelectedIncidentId(null);
         return data.message;
@@ -130,10 +139,14 @@ export function IncidentsDataTable({ data }: IncidentsDataTableProps) {
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{incident.reporter.name}</td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <div className="flex items-center justify-end gap-x-2">
-                  <Link href={`/dashboard/incidents/${incident.id}/edit`}>
+                  {incident.closed ? (
+                    <Button variant="outline" size="xs" disabled>Edit</Button>
+                  ) : (
+                    <Link href={`/dashboard/incidents/${incident.id}/edit`}>
                       <Button variant="outline" size="xs">Edit</Button>
-                  </Link>
-                  <Button variant="destructive-outline" size="xs" onClick={() => handleDeleteClick(incident.id)}>Delete</Button>
+                    </Link>
+                  )}
+                  <Button variant="destructive-outline" size="xs" onClick={() => handleDeleteClick(incident.id)} disabled={incident.closed}>Delete</Button>
                   {!incident.closed && (
                     <Button variant="outline" size="xs" onClick={() => handleCloseClick(incident.id)}>Close</Button>
                   )}
