@@ -3,12 +3,15 @@
 import * as React from "react";
 import { Incident, System, Company, User } from "@prisma/client";
 import { useRouter } from "next/navigation";
-
+import { toast } from "sonner";
+import { deleteIncidentAction, closeIncidentAction } from "@/app/actions/incidents";
+import { ConfirmationModal } from "@/components/ui/modal/ConfirmationModal";
 import Link from "next/link";
 import Button from "../ui/button/Button";
 
 // Define a type for the incident data that includes relations
 export type IncidentWithRelations = Incident & {
+  closed: boolean;
   system: System;
   company: Company;
   reporter: User;
@@ -21,6 +24,8 @@ interface IncidentsDataTableProps {
 export function IncidentsDataTable({ data }: IncidentsDataTableProps) {
   const router = useRouter();
   const [sortConfig, setSortConfig] = React.useState<{ key: keyof IncidentWithRelations, direction: 'ascending' | 'descending' } | null>(null);
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [selectedIncidentId, setSelectedIncidentId] = React.useState<number | null>(null);
 
   const sortedData = React.useMemo(() => {
     let sortableData = [...data];
@@ -53,22 +58,38 @@ export function IncidentsDataTable({ data }: IncidentsDataTableProps) {
     setSortConfig({ key, direction });
   };
 
-  const handleDelete = async (incidentId: number) => {
-    if (!confirm("Are you sure you want to delete this incident?")) return;
+  const handleDeleteClick = (incidentId: number) => {
+    setSelectedIncidentId(incidentId);
+    setIsModalOpen(true);
+  };
 
-    try {
-      const response = await fetch(`/api/incidents/${incidentId}`, {
-        method: 'DELETE',
-      });
+    const handleCloseClick = async (incidentId: number) => {
+    const promise = closeIncidentAction(incidentId);
 
-      if (response.ok) {
-        router.refresh();
-      } else {
-        console.error("Failed to delete incident");
-      }
-    } catch (error) {
-      console.error("An error occurred:", error);
-    }
+    toast.promise(promise, {
+      loading: 'Closing incident...',
+      success: (data) => data.message,
+      error: (err) => err.message || 'An unexpected error occurred.',
+    });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (selectedIncidentId === null) return;
+
+    const promise = deleteIncidentAction(selectedIncidentId);
+
+    toast.promise(promise, {
+      loading: 'Deleting incident...',
+      success: (data) => {
+        setIsModalOpen(false);
+        setSelectedIncidentId(null);
+        return data.message;
+      },
+      error: (err) => {
+        setIsModalOpen(false);
+        return err.message || 'An unexpected error occurred.';
+      },
+    });
   };
   return (
     <div className="rounded-md border overflow-hidden">
@@ -108,10 +129,15 @@ export function IncidentsDataTable({ data }: IncidentsDataTableProps) {
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{new Date(incident.end).toLocaleString()}</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{incident.reporter.name}</td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <Link href={`/dashboard/incidents/${incident.id}/edit`}>
-                    <Button variant="outline" size="sm">Edit</Button>
-                </Link>
-                <Button variant="outline" size="sm" className="text-red-600 hover:text-red-800" onClick={() => handleDelete(incident.id)}>Delete</Button>
+                <div className="flex items-center justify-end gap-x-2">
+                  <Link href={`/dashboard/incidents/${incident.id}/edit`}>
+                      <Button variant="outline" size="xs">Edit</Button>
+                  </Link>
+                  <Button variant="destructive-outline" size="xs" onClick={() => handleDeleteClick(incident.id)}>Delete</Button>
+                  {!incident.closed && (
+                    <Button variant="outline" size="xs" onClick={() => handleCloseClick(incident.id)}>Close</Button>
+                  )}
+                </div>
               </td>
             </tr>
           ))}
@@ -123,6 +149,13 @@ export function IncidentsDataTable({ data }: IncidentsDataTableProps) {
             <p className="text-gray-500">No incidents found.</p>
         </div>
       )}
+      <ConfirmationModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Törlés Megerősítése"
+        message="Biztosan törölni szeretné ezt az incidenst? Ez a művelet nem vonható vissza."
+      />
     </div>
   );
 }

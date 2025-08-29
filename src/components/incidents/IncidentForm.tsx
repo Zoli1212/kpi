@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Company, System } from "@prisma/client";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { createIncidentAction } from "@/app/actions/incidents";
 import Button from "@/components/ui/button/Button";
 
 interface IncidentFormProps {
@@ -13,14 +15,14 @@ interface IncidentFormProps {
 export const IncidentForm = ({ companies, systems }: IncidentFormProps) => {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    type: "Planned",
+    type: "Tervezett",
     companyId: companies[0]?.id.toString() || "",
     systemId: systems[0]?.id.toString() || "",
     description: "",
     beginning: "",
     end: "",
-    urgency: "Low",
-    criticality: "Low",
+    urgency: "Alacsony",
+    criticality: "Alacsony",
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -30,97 +32,114 @@ export const IncidentForm = ({ companies, systems }: IncidentFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      const response = await fetch('/api/incidents', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
 
-      if (response.ok) {
-        router.push('/dashboard/incidents');
-        router.refresh();
-      } else {
-        // Handle errors
-        console.error("Failed to create incident");
-      }
-    } catch (error) {
-      console.error("An error occurred:", error);
-    }
+    const promise = createIncidentAction(formData);
+
+    toast.promise(promise, {
+      loading: 'Incident creation in progress...',
+      success: (data) => {
+        if (data.success) {
+          router.push('/dashboard/incidents');
+          return data.message;
+        } else {
+          throw new Error(data.message);
+        }
+      },
+      error: (err) => err.message || 'An unexpected error occurred.',
+    });
   };
 
+  const inputClass = "w-full px-4 py-2 text-gray-700 bg-gray-100 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200";
+  const labelClass = "block text-sm font-semibold text-gray-600 mb-1";
+
+  const Section = ({ title, children }: { title: string, children: React.ReactNode }) => (
+    <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-200">
+      <h3 className="text-lg font-bold text-gray-800 mb-6 pb-2 border-b border-gray-200">{title}</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+        {children}
+      </div>
+    </div>
+  );
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Incident Type */}
-      <div>
-        <label htmlFor="type" className="block text-sm font-medium text-gray-700">Incident Type</label>
-        <select id="type" name="type" value={formData.type} onChange={handleChange} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-          <option>Planned</option>
-          <option>Unplanned</option>
-        </select>
-      </div>
-
-      {/* Company */}
-      <div>
-        <label htmlFor="companyId" className="block text-sm font-medium text-gray-700">Company</label>
-        <select id="companyId" name="companyId" value={formData.companyId} onChange={handleChange} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-          {companies.map(company => (
-            <option key={company.id} value={company.id}>{company.name}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* System */}
-      <div>
-        <label htmlFor="systemId" className="block text-sm font-medium text-gray-700">System</label>
-        <select id="systemId" name="systemId" value={formData.systemId} onChange={handleChange} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-          {systems.map(system => (
-            <option key={system.id} value={system.id}>{system.name}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* Beginning / End */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-            <label htmlFor="beginning" className="block text-sm font-medium text-gray-700">Start Time</label>
-            <input type="datetime-local" id="beginning" name="beginning" value={formData.beginning} onChange={handleChange} className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" />
-        </div>
-        <div>
-            <label htmlFor="end" className="block text-sm font-medium text-gray-700">End Time</label>
-            <input type="datetime-local" id="end" name="end" value={formData.end} onChange={handleChange} className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" />
-        </div>
-      </div>
-
-      {/* Urgency / Criticality */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-              <label htmlFor="urgency" className="block text-sm font-medium text-gray-700">Urgency</label>
-              <select id="urgency" name="urgency" value={formData.urgency} onChange={handleChange} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                  <option>Low</option>
-                  <option>Medium</option>
-                  <option>High</option>
+    <div className="bg-gray-50 min-h-screen p-4 sm:p-6 lg:p-8">
+      <div className="max-w-5xl mx-auto">
+        <form onSubmit={handleSubmit} className="space-y-8">
+          <Section title="Alapvető Információk">
+            {/* Incident Type */}
+            <div>
+              <label htmlFor="type" className={labelClass}>Incidens Típusa</label>
+              <select id="type" name="type" value={formData.type} onChange={handleChange} className={inputClass}>
+                <option>Tervezett</option>
+                <option>Nem tervezett</option>
               </select>
-          </div>
-          <div>
-              <label htmlFor="criticality" className="block text-sm font-medium text-gray-700">Criticality</label>
-              <select id="criticality" name="criticality" value={formData.criticality} onChange={handleChange} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                  <option>Low</option>
-                  <option>Medium</option>
-                  <option>High</option>
+            </div>
+
+            {/* Company */}
+            <div>
+              <label htmlFor="companyId" className={labelClass}>Cég</label>
+              <select id="companyId" name="companyId" value={formData.companyId} onChange={handleChange} className={inputClass}>
+                {companies.map(company => (
+                  <option key={company.id} value={company.id}>{company.name}</option>
+                ))}
               </select>
+            </div>
+
+            {/* System */}
+            <div className="md:col-span-2">
+              <label htmlFor="systemId" className={labelClass}>Érintett Rendszer</label>
+              <select id="systemId" name="systemId" value={formData.systemId} onChange={handleChange} className={inputClass}>
+                {systems.map(system => (
+                  <option key={system.id} value={system.id}>{system.name}</option>
+                ))}
+              </select>
+            </div>
+          </Section>
+
+          <Section title="Időzítés és Súlyosság">
+            {/* Beginning */}
+            <div>
+              <label htmlFor="beginning" className={labelClass}>Kezdete</label>
+              <input type="datetime-local" id="beginning" name="beginning" value={formData.beginning} onChange={handleChange} className={inputClass} />
+            </div>
+
+            {/* End */}
+            <div>
+              <label htmlFor="end" className={labelClass}>Vége</label>
+              <input type="datetime-local" id="end" name="end" value={formData.end} onChange={handleChange} className={inputClass} />
+            </div>
+
+            {/* Urgency */}
+            <div>
+              <label htmlFor="urgency" className={labelClass}>Sürgősség</label>
+              <select id="urgency" name="urgency" value={formData.urgency} onChange={handleChange} className={inputClass}>
+                <option>Alacsony</option>
+                <option>Közepes</option>
+                <option>Magas</option>
+              </select>
+            </div>
+
+            {/* Criticality */}
+            <div>
+              <label htmlFor="criticality" className={labelClass}>Kritikusság</label>
+              <select id="criticality" name="criticality" value={formData.criticality} onChange={handleChange} className={inputClass}>
+                <option>Alacsony</option>
+                <option>Közepes</option>
+                <option>Magas</option>
+              </select>
+            </div>
+          </Section>
+
+          <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-200">
+            <label htmlFor="description" className={labelClass}>Részletes Leírás</label>
+            <textarea id="description" name="description" value={formData.description} onChange={handleChange} rows={5} className={`${inputClass} resize-y`}></textarea>
           </div>
-      </div>
 
-      {/* Description */}
-      <div>
-        <label htmlFor="description" className="block text-sm font-medium text-gray-700">Description</label>
-        <textarea id="description" name="description" value={formData.description} onChange={handleChange} rows={3} className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></textarea>
+          <div className="flex justify-end pt-4">
+            <Button type="submit">Incidens Mentése</Button>
+          </div>
+        </form>
       </div>
-
-      <div className="flex justify-end">
-        <Button type="submit">Save Incident</Button>
-      </div>
-    </form>
+    </div>
   );
 };

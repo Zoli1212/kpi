@@ -257,6 +257,7 @@ model Incident {
   created         DateTime  @default(now())
   modified        DateTime  @updatedAt
   expired         DateTime?
+  closed          Boolean   @default(false)
   
   // Relations
   reporter        User      @relation("Incident_Reporter", fields: [reporterId], references: [id])
