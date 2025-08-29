@@ -22,7 +22,8 @@ export const IncidentForm = ({ companies, systems }: IncidentFormProps) => {
     beginning: "",
     end: "",
     urgency: "Alacsony",
-    criticality: "Alacsony",
+    criticality: "1-kritikus",
+    cause: "",
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -61,6 +62,12 @@ export const IncidentForm = ({ companies, systems }: IncidentFormProps) => {
     </div>
   );
 
+  const isFormValid =
+    formData.description.trim() !== "" &&
+    formData.beginning.trim() !== "" &&
+    formData.end.trim() !== "" &&
+    formData.cause.trim() !== "";
+
   return (
     <div className="bg-gray-50 min-h-screen p-4 sm:p-6 lg:p-8">
       <div className="max-w-5xl mx-auto">
@@ -77,7 +84,7 @@ export const IncidentForm = ({ companies, systems }: IncidentFormProps) => {
 
             {/* Company */}
             <div>
-              <label htmlFor="companyId" className={labelClass}>Cég/Terület</label>
+              <label htmlFor="companyId" className={labelClass}>Cég/Adatbázis</label>
               <select id="companyId" name="companyId" value={formData.companyId} onChange={handleChange} className={inputClass}>
                 {companies.map(company => (
                   <option key={company.id} value={company.id}>{company.name}</option>
@@ -114,7 +121,7 @@ export const IncidentForm = ({ companies, systems }: IncidentFormProps) => {
               <label htmlFor="urgency" className={labelClass}>Sürgősség</label>
               <select id="urgency" name="urgency" value={formData.urgency} onChange={handleChange} className={inputClass}>
                 <option>Alacsony</option>
-                <option>Közepes</option>
+                <option>Normál</option>
                 <option>Magas</option>
               </select>
             </div>
@@ -123,9 +130,9 @@ export const IncidentForm = ({ companies, systems }: IncidentFormProps) => {
             <div>
               <label htmlFor="criticality" className={labelClass}>Kritikusság</label>
               <select id="criticality" name="criticality" value={formData.criticality} onChange={handleChange} className={inputClass}>
-                <option>Alacsony</option>
-                <option>Közepes</option>
-                <option>Magas</option>
+                <option>1-kritikus</option>
+                <option>2-fontos</option>
+                <option>3-egyéb</option>
               </select>
             </div>
           </Section>
@@ -135,8 +142,13 @@ export const IncidentForm = ({ companies, systems }: IncidentFormProps) => {
             <textarea id="description" name="description" value={formData.description} onChange={handleChange} rows={5} className={`${inputClass} resize-y`}></textarea>
           </div>
 
+          <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-200">
+            <label htmlFor="cause" className={labelClass}>Kiváltó Ok</label>
+            <textarea id="cause" name="cause" value={formData.cause} onChange={handleChange} rows={3} className={`${inputClass} resize-y`}></textarea>
+          </div>
+
           <div className="flex justify-end pt-4">
-            <Button type="submit">Incidens Mentése</Button>
+            <Button type="submit" disabled={!isFormValid}>Incidens Mentése</Button>
           </div>
         </form>
       </div>

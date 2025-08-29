@@ -4,7 +4,7 @@ import * as React from "react";
 import { Incident, System, Company, User } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { deleteIncidentAction, closeIncidentAction } from "@/app/actions/incidents";
+import { deleteIncidentAction, closeIncidentAction, openIncidentAction } from "@/app/actions/incidents";
 import { ConfirmationModal } from "@/components/ui/modal/ConfirmationModal";
 import Link from "next/link";
 import Button from "../ui/button/Button";
@@ -64,11 +64,12 @@ export function IncidentsDataTable({ data }: IncidentsDataTableProps) {
     setIsModalOpen(true);
   };
 
-  const handleCloseClick = async (incidentId: number) => {
-    const promise = closeIncidentAction(incidentId);
+  const handleToggleCloseClick = async (incidentId: number, isClosed: boolean) => {
+    const action = isClosed ? openIncidentAction : closeIncidentAction;
+    const promise = action(incidentId);
 
     toast.promise(promise, {
-      loading: 'Closing incident...',
+      loading: isClosed ? 'Opening incident...' : 'Closing incident...',
       success: (data) => {
         if (data.success) {
           router.refresh();
@@ -147,9 +148,9 @@ export function IncidentsDataTable({ data }: IncidentsDataTableProps) {
                     </Link>
                   )}
                   <Button variant="destructive-outline" size="xs" onClick={() => handleDeleteClick(incident.id)} disabled={incident.closed}>Töröl</Button>
-                  {!incident.closed && (
-                    <Button variant="outline" size="xs" onClick={() => handleCloseClick(incident.id)}>Lezár</Button>
-                  )}
+                  <Button variant="outline" size="xs" onClick={() => handleToggleCloseClick(incident.id, incident.closed)}>
+                    {incident.closed ? 'Nyit' : 'Lezár'}
+                  </Button>
                 </div>
               </td>
             </tr>

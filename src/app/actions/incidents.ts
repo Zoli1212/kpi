@@ -13,6 +13,7 @@ interface IncidentFormData {
   end: string;
   urgency: string;
   criticality: string;
+  cause: string;
 }
 
 export async function createIncidentAction(data: IncidentFormData) {
@@ -84,5 +85,26 @@ export async function deleteIncidentAction(incidentId: number) {
   } catch (error) {
     console.error('Failed to delete incident:', error);
     return { success: false, message: 'Failed to delete incident.' };
+  }
+}
+
+export async function openIncidentAction(incidentId: number) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return { success: false, message: 'Authentication required.' };
+  }
+
+  try {
+    await prisma.incident.update({
+      where: { id: incidentId },
+      data: { closed: false },
+    });
+
+    revalidatePath('/dashboard/incidents');
+    return { success: true, message: 'Incident successfully opened!' };
+  } catch (error) {
+    console.error('Failed to open incident:', error);
+    return { success: false, message: 'Failed to open incident.' };
   }
 }
