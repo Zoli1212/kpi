@@ -77,7 +77,7 @@ export const IncidentForm = ({ companies, systems }: IncidentFormProps) => {
 
             {/* Company */}
             <div>
-              <label htmlFor="companyId" className={labelClass}>Cég</label>
+              <label htmlFor="companyId" className={labelClass}>Cég/Terület</label>
               <select id="companyId" name="companyId" value={formData.companyId} onChange={handleChange} className={inputClass}>
                 {companies.map(company => (
                   <option key={company.id} value={company.id}>{company.name}</option>

@@ -140,15 +140,15 @@ export function IncidentsDataTable({ data }: IncidentsDataTableProps) {
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <div className="flex items-center justify-end gap-x-2">
                   {incident.closed ? (
-                    <Button variant="outline" size="xs" disabled>Edit</Button>
+                    <Button variant="outline" size="xs" disabled>Módosít</Button>
                   ) : (
                     <Link href={`/dashboard/incidents/${incident.id}/edit`}>
-                      <Button variant="outline" size="xs">Edit</Button>
+                      <Button variant="outline" size="xs">Módosít</Button>
                     </Link>
                   )}
-                  <Button variant="destructive-outline" size="xs" onClick={() => handleDeleteClick(incident.id)} disabled={incident.closed}>Delete</Button>
+                  <Button variant="destructive-outline" size="xs" onClick={() => handleDeleteClick(incident.id)} disabled={incident.closed}>Töröl</Button>
                   {!incident.closed && (
-                    <Button variant="outline" size="xs" onClick={() => handleCloseClick(incident.id)}>Close</Button>
+                    <Button variant="outline" size="xs" onClick={() => handleCloseClick(incident.id)}>Lezár</Button>
                   )}
                 </div>
               </td>
