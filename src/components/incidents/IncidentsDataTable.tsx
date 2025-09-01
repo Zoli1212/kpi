@@ -158,7 +158,16 @@ export function IncidentsDataTable({ data }: IncidentsDataTableProps) {
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {filteredAndSortedData.map((incident) => (
+          {filteredAndSortedData.map((incident) => {
+            const durationMs = new Date(incident.end).getTime() - new Date(incident.beginning).getTime();
+            const isLongDuration = durationMs > 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
+            const minutes = Math.floor(durationMs / 60000);
+            const hours = Math.floor(minutes / 60);
+            const remainingMinutes = minutes % 60;
+            const durationString = hours > 0 ? `${hours}h ${remainingMinutes}m` : `${minutes}m`;
+
+            return (
             <tr key={incident.id}>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{incident.type}</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{incident.system.name}</td>
@@ -166,18 +175,9 @@ export function IncidentsDataTable({ data }: IncidentsDataTableProps) {
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{incident.notificationId?.substring(0, 14)}</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{new Date(incident.beginning).toLocaleString()}</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{new Date(incident.end).toLocaleString()}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{
-                (() => {
-                  const durationMs = new Date(incident.end).getTime() - new Date(incident.beginning).getTime();
-                  const minutes = Math.floor(durationMs / 60000);
-                  const hours = Math.floor(minutes / 60);
-                  const remainingMinutes = minutes % 60;
-                  if (hours > 0) {
-                    return `${hours}h ${remainingMinutes}m`;
-                  }
-                  return `${minutes}m`;
-                })()
-              }</td>
+              <td className={`px-6 py-4 whitespace-nowrap text-sm ${isLongDuration ? 'text-red-500' : 'text-gray-900'}`}>
+                {durationString}
+              </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{incident.reporter.name}</td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <div className="flex items-center justify-end gap-x-2">
@@ -195,7 +195,7 @@ export function IncidentsDataTable({ data }: IncidentsDataTableProps) {
                 </div>
               </td>
             </tr>
-          ))}
+          )})}
         </tbody>
       </table>
       </div>
