@@ -26,10 +26,12 @@ export function IncidentsDataTable({ data }: IncidentsDataTableProps) {
   const [sortConfig, setSortConfig] = React.useState<{ key: keyof IncidentWithRelations; direction: 'ascending' | 'descending' } | null>(null);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [selectedIncidentId, setSelectedIncidentId] = React.useState<number | null>(null);
+  const [filter, setFilter] = React.useState('');
 
-
-  const sortedData = React.useMemo(() => {
-    let sortableItems = [...data];
+  const filteredAndSortedData = React.useMemo(() => {
+    let sortableItems = data.filter(incident => 
+      incident.reporter.name.toLowerCase().includes(filter.toLowerCase())
+    );
     if (sortConfig !== null) {
       sortableItems.sort((a, b) => {
         let aValue: any;
@@ -60,7 +62,7 @@ export function IncidentsDataTable({ data }: IncidentsDataTableProps) {
       });
     }
     return sortableItems;
-  }, [data, sortConfig]);
+  }, [data, sortConfig, filter]);
 
   const requestSort = (key: keyof IncidentWithRelations) => {
     let direction: 'ascending' | 'descending' = 'ascending';
@@ -114,7 +116,14 @@ export function IncidentsDataTable({ data }: IncidentsDataTableProps) {
   };
   return (
     <div className="rounded-md border overflow-hidden">
-      <div className="flex items-center justify-end py-4 px-4">
+      <div className="flex items-center justify-between py-4 px-4">
+          <input
+            type="text"
+            placeholder="Keresés a riporterre..."
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="block w-full rounded-md border-0 py-1.5 pl-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 max-w-xs"
+          />
           <Link href="/dashboard/incidents/new">
             <Button>Create Incident</Button>
           </Link>
@@ -149,7 +158,7 @@ export function IncidentsDataTable({ data }: IncidentsDataTableProps) {
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {sortedData.map((incident) => (
+          {filteredAndSortedData.map((incident) => (
             <tr key={incident.id}>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{incident.type}</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{incident.system.name}</td>
