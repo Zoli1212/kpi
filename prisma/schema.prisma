@@ -258,6 +258,7 @@ model Incident {
   modified        DateTime  @updatedAt
   expired         DateTime?
   closed          Boolean   @default(false)
+  jiraId          String?
   
   // Relations
   reporter        User      @relation("Incident_Reporter", fields: [reporterId], references: [id])

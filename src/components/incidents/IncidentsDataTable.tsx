@@ -32,8 +32,19 @@ export function IncidentsDataTable({ data }: IncidentsDataTableProps) {
     let sortableItems = [...data];
     if (sortConfig !== null) {
       sortableItems.sort((a, b) => {
-        const aValue = a[sortConfig.key];
-        const bValue = b[sortConfig.key];
+        let aValue: any;
+        let bValue: any;
+
+        if (sortConfig.key === 'reporter') {
+          aValue = a.reporter.name;
+          bValue = b.reporter.name;
+        } else if (sortConfig.key === 'system') {
+          aValue = a.system.name;
+          bValue = b.system.name;
+        } else {
+          aValue = a[sortConfig.key];
+          bValue = b[sortConfig.key];
+        }
 
         if (aValue === null && bValue === null) return 0;
         if (aValue === null) return 1;
@@ -113,8 +124,12 @@ export function IncidentsDataTable({ data }: IncidentsDataTableProps) {
         <thead className="bg-gray-50">
           <tr>
             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">System</th>
+            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('system')}>
+              System
+              {sortConfig?.key === 'system' && (sortConfig.direction === 'ascending' ? ' 🔼' : ' 🔽')}
+            </th>
             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
+            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notification ID</th>
             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('beginning')}>
               Start Time
               {sortConfig?.key === 'beginning' && (sortConfig.direction === 'ascending' ? ' 🔼' : ' 🔽')}
@@ -123,7 +138,11 @@ export function IncidentsDataTable({ data }: IncidentsDataTableProps) {
               End Time
               {sortConfig?.key === 'end' && (sortConfig.direction === 'ascending' ? ' 🔼' : ' 🔽')}
             </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reporter</th>
+            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('reporter')}>
+              Reporter
+              {sortConfig?.key === 'reporter' && (sortConfig.direction === 'ascending' ? ' 🔼' : ' 🔽')}
+            </th>
             <th scope="col" className="relative px-6 py-3">
               <span className="sr-only">Actions</span>
             </th>
@@ -135,8 +154,21 @@ export function IncidentsDataTable({ data }: IncidentsDataTableProps) {
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{incident.type}</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{incident.system.name}</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{incident.company.name}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{incident.notificationId?.substring(0, 14)}</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{new Date(incident.beginning).toLocaleString()}</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{new Date(incident.end).toLocaleString()}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{
+                (() => {
+                  const durationMs = new Date(incident.end).getTime() - new Date(incident.beginning).getTime();
+                  const minutes = Math.floor(durationMs / 60000);
+                  const hours = Math.floor(minutes / 60);
+                  const remainingMinutes = minutes % 60;
+                  if (hours > 0) {
+                    return `${hours}h ${remainingMinutes}m`;
+                  }
+                  return `${minutes}m`;
+                })()
+              }</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{incident.reporter.name}</td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <div className="flex items-center justify-end gap-x-2">

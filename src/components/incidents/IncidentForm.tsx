@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Company, System } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -14,6 +14,7 @@ interface IncidentFormProps {
 
 export const IncidentForm = ({ companies, systems }: IncidentFormProps) => {
   const router = useRouter();
+  const jiraIdRef = useRef("");
   const [formData, setFormData] = useState({
     type: "Tervezett",
     companyId: companies[0]?.id.toString() || "",
@@ -28,13 +29,18 @@ export const IncidentForm = ({ companies, systems }: IncidentFormProps) => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    if (name === 'jiraId') {
+      jiraIdRef.current = value;
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const promise = createIncidentAction(formData);
+    const fullFormData = { ...formData, jiraId: jiraIdRef.current };
+    const promise = createIncidentAction(fullFormData);
 
     toast.promise(promise, {
       loading: 'Incident creation in progress...',
@@ -66,6 +72,7 @@ export const IncidentForm = ({ companies, systems }: IncidentFormProps) => {
     formData.description.trim() !== "" &&
     formData.beginning.trim() !== "" &&
     formData.end.trim() !== "" &&
+    jiraIdRef.current.trim() !== "" &&
     formData.cause.trim() !== "";
 
   return (
@@ -100,6 +107,12 @@ export const IncidentForm = ({ companies, systems }: IncidentFormProps) => {
                   <option key={system.id} value={system.id}>{system.name}</option>
                 ))}
               </select>
+            </div>
+
+            {/* Jira ID */}
+            <div>
+              <label htmlFor="jiraId" className={labelClass}>Jira ID</label>
+              <input type="text" id="jiraId" name="jiraId" defaultValue={jiraIdRef.current} onChange={handleChange} className={inputClass} />
             </div>
           </Section>
 

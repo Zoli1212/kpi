@@ -8,6 +8,7 @@ interface IncidentFormData {
   type: string;
   companyId: string;
   systemId: string;
+  jiraId: string;
   description: string;
   beginning: string;
   end: string;
@@ -28,6 +29,7 @@ export async function createIncidentAction(data: IncidentFormData) {
     await prisma.incident.create({
       data: {
         ...data,
+        notificationId: data.jiraId,
         companyId: parseInt(data.companyId),
         systemId: parseInt(data.systemId),
         beginning: new Date(data.beginning),
