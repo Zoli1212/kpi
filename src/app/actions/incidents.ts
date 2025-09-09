@@ -15,6 +15,7 @@ interface IncidentFormData {
   urgency: string;
   criticality: string;
   cause: string;
+  solver: string;
 }
 
 export async function createIncidentAction(data: IncidentFormData) {
@@ -38,6 +39,7 @@ export async function createIncidentAction(data: IncidentFormData) {
         creatorId: userId, // Assign creator
         handlerId: userId, // Assign default handler
         detectionTime: new Date(), // Set detection time
+        solver: data.solver,
       },
     });
 

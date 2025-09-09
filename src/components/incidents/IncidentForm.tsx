@@ -25,6 +25,7 @@ export const IncidentForm = ({ companies, systems }: IncidentFormProps) => {
     urgency: "Alacsony",
     criticality: "1-kritikus",
     cause: "",
+    solver: "",
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -73,7 +74,8 @@ export const IncidentForm = ({ companies, systems }: IncidentFormProps) => {
     formData.beginning.trim() !== "" &&
     formData.end.trim() !== "" &&
     jiraIdRef.current.trim() !== "" &&
-    formData.cause.trim() !== "";
+    formData.cause.trim() !== "" &&
+    formData.solver.trim() !== "";
 
   return (
     <div className="bg-gray-50 min-h-screen p-4 sm:p-6 lg:p-8">
@@ -158,6 +160,11 @@ export const IncidentForm = ({ companies, systems }: IncidentFormProps) => {
           <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-200">
             <label htmlFor="cause" className={labelClass}>Kiváltó Ok</label>
             <textarea id="cause" name="cause" value={formData.cause} onChange={handleChange} rows={3} className={`${inputClass} resize-y`}></textarea>
+          </div>
+
+          <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-200">
+            <label htmlFor="solver" className={labelClass}>Megoldó</label>
+            <input type="text" id="solver" name="solver" value={formData.solver} onChange={handleChange} className={inputClass} placeholder="Adja meg a megoldó nevét" />
           </div>
 
           <div className="flex justify-end pt-4">

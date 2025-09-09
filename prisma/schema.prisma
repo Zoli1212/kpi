@@ -207,6 +207,7 @@ model System {
   created                DateTime    @default(now())
   modified               DateTime    @updatedAt
   expired                DateTime?
+  onlyKpi                Boolean @default(true)
   
   // Relations
   kpiData               KPI_Data[]
@@ -259,6 +260,7 @@ model Incident {
   expired         DateTime?
   closed          Boolean   @default(false)
   jiraId          String?
+  solver          String?
   
   // Relations
   reporter        User      @relation("Incident_Reporter", fields: [reporterId], references: [id])
