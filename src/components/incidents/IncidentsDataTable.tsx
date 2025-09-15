@@ -12,9 +12,9 @@ import Button from "../ui/button/Button";
 // Define a type for the incident data that includes relations
 export type IncidentWithRelations = Incident & {
   closed: boolean;
-  system: System;
-  company: Company;
-  reporter: User;
+  system: System | null;
+  company: Company | null;
+  reporter: User | null;
 };
 
 interface IncidentsDataTableProps {
@@ -30,7 +30,7 @@ export function IncidentsDataTable({ data }: IncidentsDataTableProps) {
 
   const filteredAndSortedData = React.useMemo(() => {
     let sortableItems = data.filter(incident => 
-      incident.reporter.name.toLowerCase().includes(filter.toLowerCase())
+      incident.reporter?.name?.toLowerCase().includes(filter.toLowerCase()) || false
     );
     if (sortConfig !== null) {
       sortableItems.sort((a, b) => {
@@ -38,11 +38,11 @@ export function IncidentsDataTable({ data }: IncidentsDataTableProps) {
         let bValue: any;
 
         if (sortConfig.key === 'reporter') {
-          aValue = a.reporter.name;
-          bValue = b.reporter.name;
+          aValue = a.reporter?.name || '';
+          bValue = b.reporter?.name || '';
         } else if (sortConfig.key === 'system') {
-          aValue = a.system.name;
-          bValue = b.system.name;
+          aValue = a.system?.name || '';
+          bValue = b.system?.name || '';
         } else {
           aValue = a[sortConfig.key];
           bValue = b[sortConfig.key];
@@ -119,41 +119,41 @@ export function IncidentsDataTable({ data }: IncidentsDataTableProps) {
       <div className="flex items-center justify-between py-4 px-4">
           <input
             type="text"
-            placeholder="Keresés a riporterre..."
+            placeholder="Keresés riporter szerint..."
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             className="block w-full rounded-md border-0 py-1.5 pl-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 max-w-xs"
           />
           <Link href="/dashboard/incidents/new">
-            <Button>Create Incident</Button>
+            <Button>Új Incidens</Button>
           </Link>
       </div>
       <div className="relative overflow-auto max-h-[calc(100vh-15rem)]">
       <table className="w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Típus</th>
             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('system')}>
-              System
+              Rendszerszolgáltatás
               {sortConfig?.key === 'system' && (sortConfig.direction === 'ascending' ? ' 🔼' : ' 🔽')}
             </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notification ID</th>
+            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cég/Adatbázis</th>
+            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jira ID</th>
             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('beginning')}>
-              Start Time
+              Kezdete
               {sortConfig?.key === 'beginning' && (sortConfig.direction === 'ascending' ? ' 🔼' : ' 🔽')}
             </th>
             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('end')}>
-              End Time
+              Vége
               {sortConfig?.key === 'end' && (sortConfig.direction === 'ascending' ? ' 🔼' : ' 🔽')}
             </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Időtartam</th>
             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer" onClick={() => requestSort('reporter')}>
-              Reporter
+              Riporter
               {sortConfig?.key === 'reporter' && (sortConfig.direction === 'ascending' ? ' 🔼' : ' 🔽')}
             </th>
             <th scope="col" className="relative px-6 py-3">
-              <span className="sr-only">Actions</span>
+              <span className="sr-only">Műveletek</span>
             </th>
           </tr>
         </thead>
@@ -170,15 +170,19 @@ export function IncidentsDataTable({ data }: IncidentsDataTableProps) {
             return (
             <tr key={incident.id}>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{incident.type}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{incident.system.name}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{incident.company.name}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{incident.notificationId?.substring(0, 14)}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                {incident.system ? 
+                  ((incident.system as any).refName ? `${(incident.system as any).refName} - ${incident.system.name}` : incident.system.name) 
+                  : 'N/A'}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{incident.company?.name || 'N/A'}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{incident.notificationId || incident.jiraId || 'N/A'}</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{new Date(incident.beginning).toLocaleString()}</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{new Date(incident.end).toLocaleString()}</td>
               <td className={`px-6 py-4 whitespace-nowrap text-sm ${isLongDuration ? 'text-red-500' : 'text-gray-900'}`}>
                 {durationString}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{incident.reporter.name}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{incident.reporter?.name || 'N/A'}</td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <div className="flex items-center justify-end gap-x-2">
                   {incident.closed ? (
@@ -201,7 +205,7 @@ export function IncidentsDataTable({ data }: IncidentsDataTableProps) {
       </div>
       {data.length === 0 && (
         <div className="text-center py-12">
-            <p className="text-gray-500">No incidents found.</p>
+            <p className="text-gray-500">Nem található incidens.</p>
         </div>
       )}
       <ConfirmationModal

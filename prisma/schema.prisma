@@ -26,12 +26,11 @@ model User {
   kpiData               KPI_Data[]  @relation("KPI_Data_User")
   approvedKPI           KPI_Data[]  @relation("KPI_Data_Approver")
   reportedIncidents     Incident[]  @relation("Incident_Reporter")
-  createdIncidents      Incident[]  @relation("Incident_Creator")
-  handledIncidents      Incident[]  @relation("Incident_Handler")
   analystSystems        System[]    @relation("System_Analyst")
   appOperatorSystems    System[]    @relation("System_AppOperator")
   platformOperatorSystems System[]   @relation("System_PlatformOperator")
   infraOperatorSystems  System[]    @relation("System_InfraOperator")
+  isKpiReporter         Boolean @default(false)
   
   userServices          UserService[] @relation("UserServices")
   userItems             UserItem[]
@@ -190,6 +189,7 @@ model UserService {
 model System {
   id                     Int         @id @default(autoincrement())
   name                   String      @unique
+  refName                String?
   description            String?
   criticality            String?
   availability           String?
@@ -239,20 +239,20 @@ model Relation {
 model Incident {
   id              Int       @id @default(autoincrement())
   ready           Boolean   @default(false)
-  reporterId      Int
+  reporterId      Int?
   detectionTime   DateTime
   notificationId  String?
   beginning       DateTime
   end             DateTime
   type            String
-  systemId        Int
-  companyId       Int
-  urgency         String
+  systemId        Int?
+  companyId       Int?
+  urgency         String?
   criticality     String
-  description     String
-  creatorId       Int
-  handlerId       Int
-  cause           String?
+  description     String    @db.VarChar(300)
+  creatorId       String?   @db.VarChar(200)
+  handlerId       String?   @db.VarChar(200)
+  cause           String?   @db.VarChar(300)
   measure         String?
   notification    String?
   created         DateTime  @default(now())
@@ -263,11 +263,9 @@ model Incident {
   solver          String?
   
   // Relations
-  reporter        User      @relation("Incident_Reporter", fields: [reporterId], references: [id])
-  system          System    @relation(fields: [systemId], references: [id])
-  company         Company   @relation(fields: [companyId], references: [id])
-  creator         User      @relation("Incident_Creator", fields: [creatorId], references: [id])
-  handler         User      @relation("Incident_Handler", fields: [handlerId], references: [id])
+  reporter        User?     @relation("Incident_Reporter", fields: [reporterId], references: [id])
+  system          System?   @relation(fields: [systemId], references: [id])
+  company         Company?  @relation(fields: [companyId], references: [id])
 }
 
 model Guide {

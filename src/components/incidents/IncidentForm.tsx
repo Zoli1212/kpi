@@ -22,7 +22,6 @@ export const IncidentForm = ({ companies, systems }: IncidentFormProps) => {
     description: "",
     beginning: "",
     end: "",
-    urgency: "Alacsony",
     criticality: "1-kritikus",
     cause: "",
     solver: "",
@@ -106,7 +105,9 @@ export const IncidentForm = ({ companies, systems }: IncidentFormProps) => {
               <label htmlFor="systemId" className={labelClass}>Érintett Rendszer</label>
               <select id="systemId" name="systemId" value={formData.systemId} onChange={handleChange} className={inputClass}>
                 {systems.map(system => (
-                  <option key={system.id} value={system.id}>{system.name}</option>
+                  <option key={system.id} value={system.id}>
+                    {(system as any).refName ? `${(system as any).refName} - ${system.name}` : system.name}
+                  </option>
                 ))}
               </select>
             </div>
@@ -118,7 +119,7 @@ export const IncidentForm = ({ companies, systems }: IncidentFormProps) => {
             </div>
           </Section>
 
-          <Section title="Időzítés és Súlyosság">
+          <Section title="Időzítés és Kritikusság">
             {/* Beginning */}
             <div>
               <label htmlFor="beginning" className={labelClass}>Kezdete</label>
@@ -129,16 +130,6 @@ export const IncidentForm = ({ companies, systems }: IncidentFormProps) => {
             <div>
               <label htmlFor="end" className={labelClass}>Vége</label>
               <input type="datetime-local" id="end" name="end" value={formData.end} onChange={handleChange} className={inputClass} />
-            </div>
-
-            {/* Urgency */}
-            <div>
-              <label htmlFor="urgency" className={labelClass}>Sürgősség</label>
-              <select id="urgency" name="urgency" value={formData.urgency} onChange={handleChange} className={inputClass}>
-                <option>Alacsony</option>
-                <option>Normál</option>
-                <option>Magas</option>
-              </select>
             </div>
 
             {/* Criticality */}

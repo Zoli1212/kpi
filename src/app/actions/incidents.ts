@@ -12,7 +12,6 @@ interface IncidentFormData {
   description: string;
   beginning: string;
   end: string;
-  urgency: string;
   criticality: string;
   cause: string;
   solver: string;
@@ -27,20 +26,25 @@ export async function createIncidentAction(data: IncidentFormData) {
 
   try {
     const userId = parseInt(session.user.id);
+    const userName = session.user.name || 'Unknown User';
+    
     await prisma.incident.create({
       data: {
-        ...data,
+        type: data.type,
+        description: data.description,
+        cause: data.cause,
+        criticality: data.criticality,
+        solver: data.solver,
         notificationId: data.jiraId,
-        companyId: parseInt(data.companyId),
-        systemId: parseInt(data.systemId),
+        companyId: data.companyId ? parseInt(data.companyId) : undefined,
+        systemId: data.systemId ? parseInt(data.systemId) : undefined,
         beginning: new Date(data.beginning),
         end: new Date(data.end),
         reporterId: userId,
-        creatorId: userId, // Assign creator
-        handlerId: userId, // Assign default handler
-        detectionTime: new Date(), // Set detection time
-        solver: data.solver,
-      },
+        creatorId: userName, 
+        handlerId: userName, 
+        detectionTime: new Date(), 
+      } as any, 
     });
 
     revalidatePath('/dashboard/incidents');
